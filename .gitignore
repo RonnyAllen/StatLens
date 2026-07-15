@@ -1,0 +1,39 @@
+# ── Save this as  .gitignore  in the StatLens repo ROOT (not apps/web) ──
+
+# Dependencies & build output
+node_modules/
+dist/
+dist-ssr/
+
+# Env — the Google client ID is public, but keep secrets out of git by default.
+# NOTE: because this is ignored, CI gets the client ID from the repo variable
+# VITE_GOOGLE_CLIENT_ID. If that variable is missing, the build still succeeds
+# but sign-in breaks silently.
+.env
+.env.local
+*.local
+
+# Python caches / test artifacts
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Local tooling output (contains absolute local paths — do not publish)
+graphify-out/
+prompts.json
+mempalace.yaml
+entities.json
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/

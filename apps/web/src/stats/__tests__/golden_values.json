@@ -1,0 +1,2802 @@
+{
+  "Unpaired t test": {
+    "dataset": {
+      "type": "Column",
+      "columnGroups": [
+        {
+          "id": "G1",
+          "name": "G1"
+        },
+        {
+          "id": "G2",
+          "name": "G2"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "1",
+          "G1": 0.7,
+          "G2": 1.9
+        },
+        {
+          "rowTitle": "2",
+          "G1": -1.6,
+          "G2": 0.8
+        },
+        {
+          "rowTitle": "3",
+          "G1": -0.2,
+          "G2": 1.1
+        },
+        {
+          "rowTitle": "4",
+          "G1": -1.2,
+          "G2": 0.1
+        },
+        {
+          "rowTitle": "5",
+          "G1": -0.1,
+          "G2": -0.1
+        },
+        {
+          "rowTitle": "6",
+          "G1": 3.4,
+          "G2": 4.4
+        },
+        {
+          "rowTitle": "7",
+          "G1": 3.7,
+          "G2": 5.5
+        },
+        {
+          "rowTitle": "8",
+          "G1": 0.8,
+          "G2": 1.6
+        },
+        {
+          "rowTitle": "9",
+          "G1": 0,
+          "G2": 4.6
+        },
+        {
+          "rowTitle": "10",
+          "G1": 2,
+          "G2": 3.4
+        }
+      ]
+    },
+    "options": {
+      "testId": "Unpaired t test"
+    },
+    "expected": {
+      "statistic": -1.8608,
+      "degrees_of_freedom": "18",
+      "p_value": 0.079186,
+      "confidence_interval": [
+        -3.36,
+        0.2
+      ],
+      "effect_size": {
+        "cohen_d": -0.8322
+      }
+    },
+    "tolerance": "1e-2"
+  },
+  "Mann-Whitney test": {
+    "dataset": {
+      "type": "Column",
+      "columnGroups": [
+        {
+          "id": "G1",
+          "name": "G1"
+        },
+        {
+          "id": "G2",
+          "name": "G2"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "1",
+          "G1": 0.7,
+          "G2": 1.9
+        },
+        {
+          "rowTitle": "2",
+          "G1": -1.6,
+          "G2": 0.8
+        },
+        {
+          "rowTitle": "3",
+          "G1": -0.2,
+          "G2": 1.1
+        },
+        {
+          "rowTitle": "4",
+          "G1": -1.2,
+          "G2": 0.1
+        },
+        {
+          "rowTitle": "5",
+          "G1": -0.1,
+          "G2": -0.1
+        },
+        {
+          "rowTitle": "6",
+          "G1": 3.4,
+          "G2": 4.4
+        },
+        {
+          "rowTitle": "7",
+          "G1": 3.7,
+          "G2": 5.5
+        },
+        {
+          "rowTitle": "8",
+          "G1": 0.8,
+          "G2": 1.6
+        },
+        {
+          "rowTitle": "9",
+          "G1": 0,
+          "G2": 4.6
+        },
+        {
+          "rowTitle": "10",
+          "G1": 2,
+          "G2": 3.4
+        }
+      ]
+    },
+    "options": {
+      "testId": "Mann-Whitney test"
+    },
+    "expected": {
+      "statistic": 25.5,
+      "p_value": 0.06933,
+      "effect_size": {
+        "CLES": 0.255
+      }
+    },
+    "tolerance": "1e-3"
+  },
+  "Kruskal-Wallis test": {
+    "dataset": {
+      "type": "Column",
+      "columnGroups": [
+        {
+          "id": "ctrl",
+          "name": "ctrl"
+        },
+        {
+          "id": "trt1",
+          "name": "trt1"
+        },
+        {
+          "id": "trt2",
+          "name": "trt2"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "1",
+          "ctrl": 4.17,
+          "trt1": 4.81,
+          "trt2": 6.31
+        },
+        {
+          "rowTitle": "2",
+          "ctrl": 5.58,
+          "trt1": 4.17,
+          "trt2": 5.12
+        },
+        {
+          "rowTitle": "3",
+          "ctrl": 5.18,
+          "trt1": 4.41,
+          "trt2": 5.54
+        },
+        {
+          "rowTitle": "4",
+          "ctrl": 6.11,
+          "trt1": 3.59,
+          "trt2": 5.5
+        },
+        {
+          "rowTitle": "5",
+          "ctrl": 4.5,
+          "trt1": 5.87,
+          "trt2": 5.37
+        },
+        {
+          "rowTitle": "6",
+          "ctrl": 4.61,
+          "trt1": 3.83,
+          "trt2": 5.29
+        },
+        {
+          "rowTitle": "7",
+          "ctrl": 5.17,
+          "trt1": 6.03,
+          "trt2": 4.92
+        },
+        {
+          "rowTitle": "8",
+          "ctrl": 4.53,
+          "trt1": 4.89,
+          "trt2": 6.15
+        },
+        {
+          "rowTitle": "9",
+          "ctrl": 5.33,
+          "trt1": 4.32,
+          "trt2": 5.8
+        },
+        {
+          "rowTitle": "10",
+          "ctrl": 5.14,
+          "trt1": 4.69,
+          "trt2": 5.26
+        }
+      ]
+    },
+    "options": {
+      "testId": "Kruskal-Wallis test",
+      "postHocTest": "Dunn's test",
+      "postHocFamily": "all_pairs"
+    },
+    "expected": {
+      "statistic": 7.9882,
+      "degrees_of_freedom": "2",
+      "p_value": 0.01842,
+      "post_hocs": {
+        "ctrl vs trt1": 0.791053,
+        "ctrl vs trt2": 0.273492,
+        "trt1 vs trt2": 0.015001
+      }
+    },
+    "tolerance": "1e-3"
+  },
+  "Welch's t-test": {
+    "dataset": {
+      "type": "Column",
+      "columnGroups": [
+        {
+          "id": "G1",
+          "name": "G1"
+        },
+        {
+          "id": "G2",
+          "name": "G2"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "1",
+          "G1": 0.7,
+          "G2": 1.9
+        },
+        {
+          "rowTitle": "2",
+          "G1": -1.6,
+          "G2": 0.8
+        },
+        {
+          "rowTitle": "3",
+          "G1": -0.2,
+          "G2": 1.1
+        },
+        {
+          "rowTitle": "4",
+          "G1": -1.2,
+          "G2": 0.1
+        },
+        {
+          "rowTitle": "5",
+          "G1": -0.1,
+          "G2": -0.1
+        },
+        {
+          "rowTitle": "6",
+          "G1": 3.4,
+          "G2": 4.4
+        },
+        {
+          "rowTitle": "7",
+          "G1": 3.7,
+          "G2": 5.5
+        },
+        {
+          "rowTitle": "8",
+          "G1": 0.8,
+          "G2": 1.6
+        },
+        {
+          "rowTitle": "9",
+          "G1": 0,
+          "G2": 4.6
+        },
+        {
+          "rowTitle": "10",
+          "G1": 2,
+          "G2": 3.4
+        }
+      ]
+    },
+    "options": {
+      "testId": "Welch's t-test"
+    },
+    "expected": {
+      "statistic": -1.8608,
+      "degrees_of_freedom": "17.776473516178495",
+      "p_value": 0.07939,
+      "confidence_interval": [
+        -3.37,
+        0.21
+      ]
+    },
+    "tolerance": "1e-2"
+  },
+  "Ordinary One-way ANOVA": {
+    "dataset": {
+      "type": "Column",
+      "columnGroups": [
+        {
+          "id": "ctrl",
+          "name": "ctrl"
+        },
+        {
+          "id": "trt1",
+          "name": "trt1"
+        },
+        {
+          "id": "trt2",
+          "name": "trt2"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "1",
+          "ctrl": 4.17,
+          "trt1": 4.81,
+          "trt2": 6.31
+        },
+        {
+          "rowTitle": "2",
+          "ctrl": 5.58,
+          "trt1": 4.17,
+          "trt2": 5.12
+        },
+        {
+          "rowTitle": "3",
+          "ctrl": 5.18,
+          "trt1": 4.41,
+          "trt2": 5.54
+        },
+        {
+          "rowTitle": "4",
+          "ctrl": 6.11,
+          "trt1": 3.59,
+          "trt2": 5.5
+        },
+        {
+          "rowTitle": "5",
+          "ctrl": 4.5,
+          "trt1": 5.87,
+          "trt2": 5.37
+        },
+        {
+          "rowTitle": "6",
+          "ctrl": 4.61,
+          "trt1": 3.83,
+          "trt2": 5.29
+        },
+        {
+          "rowTitle": "7",
+          "ctrl": 5.17,
+          "trt1": 6.03,
+          "trt2": 4.92
+        },
+        {
+          "rowTitle": "8",
+          "ctrl": 4.53,
+          "trt1": 4.89,
+          "trt2": 6.15
+        },
+        {
+          "rowTitle": "9",
+          "ctrl": 5.33,
+          "trt1": 4.32,
+          "trt2": 5.8
+        },
+        {
+          "rowTitle": "10",
+          "ctrl": 5.14,
+          "trt1": 4.69,
+          "trt2": 5.26
+        }
+      ]
+    },
+    "options": {
+      "testId": "Ordinary One-way ANOVA"
+    },
+    "expected": {
+      "statistic": 4.846,
+      "degrees_of_freedom": "2, 27",
+      "p_value": 0.01591,
+      "effect_size": {
+        "eta_sq": 0.2641
+      }
+    },
+    "tolerance": "1e-3"
+  },
+  "Paired t-test": {
+    "dataset": {
+      "type": "Column",
+      "columnGroups": [
+        {
+          "id": "G1",
+          "name": "G1"
+        },
+        {
+          "id": "G2",
+          "name": "G2"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "1",
+          "G1": 0.7,
+          "G2": 1.9
+        },
+        {
+          "rowTitle": "2",
+          "G1": -1.6,
+          "G2": 0.8
+        },
+        {
+          "rowTitle": "3",
+          "G1": -0.2,
+          "G2": 1.1
+        },
+        {
+          "rowTitle": "4",
+          "G1": -1.2,
+          "G2": 0.1
+        },
+        {
+          "rowTitle": "5",
+          "G1": -0.1,
+          "G2": -0.1
+        },
+        {
+          "rowTitle": "6",
+          "G1": 3.4,
+          "G2": 4.4
+        },
+        {
+          "rowTitle": "7",
+          "G1": 3.7,
+          "G2": 5.5
+        },
+        {
+          "rowTitle": "8",
+          "G1": 0.8,
+          "G2": 1.6
+        },
+        {
+          "rowTitle": "9",
+          "G1": 0,
+          "G2": 4.6
+        },
+        {
+          "rowTitle": "10",
+          "G1": 2,
+          "G2": 3.4
+        }
+      ]
+    },
+    "options": {
+      "testId": "Paired t-test"
+    },
+    "expected": {
+      "statistic": -4.0621,
+      "degrees_of_freedom": "9",
+      "p_value": 0.002833
+    },
+    "tolerance": "1e-3"
+  },
+  "Wilcoxon matched-pairs signed rank test": {
+    "dataset": {
+      "type": "Column",
+      "columnGroups": [
+        {
+          "id": "G1",
+          "name": "G1"
+        },
+        {
+          "id": "G2",
+          "name": "G2"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "1",
+          "G1": 0.7,
+          "G2": 1.9
+        },
+        {
+          "rowTitle": "2",
+          "G1": -1.6,
+          "G2": 0.8
+        },
+        {
+          "rowTitle": "3",
+          "G1": -0.2,
+          "G2": 1.1
+        },
+        {
+          "rowTitle": "4",
+          "G1": -1.2,
+          "G2": 0.1
+        },
+        {
+          "rowTitle": "5",
+          "G1": -0.1,
+          "G2": -0.1
+        },
+        {
+          "rowTitle": "6",
+          "G1": 3.4,
+          "G2": 4.4
+        },
+        {
+          "rowTitle": "7",
+          "G1": 3.7,
+          "G2": 5.5
+        },
+        {
+          "rowTitle": "8",
+          "G1": 0.8,
+          "G2": 1.6
+        },
+        {
+          "rowTitle": "9",
+          "G1": 0,
+          "G2": 4.6
+        },
+        {
+          "rowTitle": "10",
+          "G1": 2,
+          "G2": 3.4
+        }
+      ]
+    },
+    "options": {
+      "testId": "Wilcoxon matched-pairs signed rank test"
+    },
+    "expected": {
+      "statistic": 45,
+      "p_value": 0.009091
+    },
+    "tolerance": "1e-2"
+  },
+  "Friedman test": {
+    "dataset": {
+      "type": "Column",
+      "columnGroups": [
+        {
+          "id": "C1",
+          "name": "C1"
+        },
+        {
+          "id": "C2",
+          "name": "C2"
+        },
+        {
+          "id": "C3",
+          "name": "C3"
+        }
+      ],
+      "data": [
+        {
+          "C1": 1.2,
+          "C2": 1.5,
+          "C3": 1.9
+        },
+        {
+          "C1": 2.1,
+          "C2": 2.4,
+          "C3": 2.8
+        },
+        {
+          "C1": 0.8,
+          "C2": 1,
+          "C3": 1.3
+        }
+      ]
+    },
+    "options": {
+      "testId": "Friedman test",
+      "postHocTest": "Dunn's test",
+      "postHocFamily": "all_pairs"
+    },
+    "expected": {
+      "statistic": 6,
+      "degrees_of_freedom": "2",
+      "p_value": 0.049787,
+      "post_hocs": {
+        "C1 vs C2": 1.0,
+        "C1 vs C3": 0.699114,
+        "C2 vs C3": 1.0
+      }
+    },
+    "tolerance": "1e-3"
+  },
+  "Two-way ANOVA Type III Unbalanced": {
+    "dataset": {
+      "type": "Grouped",
+      "rowGroups": [
+        {
+          "id": "R1",
+          "name": "A1"
+        },
+        {
+          "id": "R2",
+          "name": "A2"
+        }
+      ],
+      "columnGroups": [
+        {
+          "id": "B1",
+          "name": "B1"
+        },
+        {
+          "id": "B2",
+          "name": "B2"
+        }
+      ],
+      "config": {
+        "replicates": 3
+      },
+      "data": [
+        {
+          "rowTitle": "A1",
+          "B1_1": 1.2,
+          "B1_2": 1.4,
+          "B1_3": 1.6,
+          "B2_1": 2.1,
+          "B2_2": 2.3,
+          "B2_3": 2.5
+        },
+        {
+          "rowTitle": "A2",
+          "B1_1": 0.8,
+          "B1_2": 1.1,
+          "B1_3": null,
+          "B2_1": 1.7,
+          "B2_2": 1.9,
+          "B2_3": 2
+        }
+      ]
+    },
+    "options": {
+      "testId": "Two-way ANOVA"
+    },
+    "expected": {
+      "statistic": 14.4687,
+      "p_value": 0.006682
+    },
+    "tolerance": "1e-3"
+  },
+  "Tukey HSD": {
+    "dataset": {
+      "type": "Column",
+      "columnGroups": [
+        {
+          "id": "ctrl",
+          "name": "ctrl"
+        },
+        {
+          "id": "trt1",
+          "name": "trt1"
+        },
+        {
+          "id": "trt2",
+          "name": "trt2"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "1",
+          "ctrl": 1.2,
+          "trt1": 0.8,
+          "trt2": 3.1
+        },
+        {
+          "rowTitle": "2",
+          "ctrl": 1.4,
+          "trt1": 1.1,
+          "trt2": 3.2
+        },
+        {
+          "rowTitle": "3",
+          "ctrl": 2.1,
+          "trt1": 1.7,
+          "trt2": 3.3
+        },
+        {
+          "rowTitle": "4",
+          "ctrl": null,
+          "trt1": 1.9,
+          "trt2": null
+        },
+        {
+          "rowTitle": "5",
+          "ctrl": null,
+          "trt1": 2.0,
+          "trt2": null
+        }
+      ]
+    },
+    "options": {
+      "testId": "Ordinary One-way ANOVA",
+      "postHocTest": "Tukey HSD",
+      "postHocFamily": "all_pairs"
+    },
+    "expected": {
+      "statistic": 15.65,
+      "p_value": 0.001717,
+      "post_hocs": {
+        "trt1 vs ctrl": 0.97688,
+        "trt2 vs ctrl": 0.004897,
+        "trt2 vs trt1": 0.001945
+      }
+    },
+    "tolerance": "1e-3"
+  },
+  "Chi-square": {
+    "dataset": {
+      "type": "Contingency",
+      "rowGroups": [
+        {
+          "id": "R1",
+          "name": "R1"
+        },
+        {
+          "id": "R2",
+          "name": "R2"
+        }
+      ],
+      "columnGroups": [
+        {
+          "id": "C1",
+          "name": "C1"
+        },
+        {
+          "id": "C2",
+          "name": "C2"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "R1",
+          "C1": 12,
+          "C2": 8
+        },
+        {
+          "rowTitle": "R2",
+          "C1": 8,
+          "C2": 12
+        }
+      ]
+    },
+    "options": {
+      "testId": "Chi-square test",
+      "yates_correction": false
+    },
+    "expected": {
+      "statistic": 1.6,
+      "p_value": 0.205903,
+      "degrees_of_freedom": "1"
+    },
+    "tolerance": "1e-3"
+  },
+  "Chi-square Yates": {
+    "dataset": {
+      "type": "Contingency",
+      "rowGroups": [
+        {
+          "id": "R1",
+          "name": "R1"
+        },
+        {
+          "id": "R2",
+          "name": "R2"
+        }
+      ],
+      "columnGroups": [
+        {
+          "id": "C1",
+          "name": "C1"
+        },
+        {
+          "id": "C2",
+          "name": "C2"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "R1",
+          "C1": 12,
+          "C2": 8
+        },
+        {
+          "rowTitle": "R2",
+          "C1": 8,
+          "C2": 12
+        }
+      ]
+    },
+    "options": {
+      "testId": "Chi-square test",
+      "yates_correction": true
+    },
+    "expected": {
+      "statistic": 0.9,
+      "p_value": 0.342782,
+      "degrees_of_freedom": "1"
+    },
+    "tolerance": "1e-3"
+  },
+  "Deming Regression": {
+    "dataset": {
+      "type": "XY",
+      "columnGroups": [
+        {
+          "id": "Y1",
+          "name": "Y1"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": 1,
+          "Y1": 1
+        },
+        {
+          "rowTitle": 2,
+          "Y1": 3.2
+        },
+        {
+          "rowTitle": 3,
+          "Y1": 2.8
+        },
+        {
+          "rowTitle": 4,
+          "Y1": 5.1
+        },
+        {
+          "rowTitle": 5,
+          "Y1": 4.4
+        },
+        {
+          "rowTitle": 6,
+          "Y1": 7
+        },
+        {
+          "rowTitle": 7,
+          "Y1": 6.1
+        },
+        {
+          "rowTitle": 8,
+          "Y1": 9.2
+        }
+      ]
+    },
+    "options": {
+      "testId": "Deming Regression"
+    },
+    "expected": {
+      "statistic": 1.062963,
+      "p_value": null
+    },
+    "tolerance": "1e-3"
+  },
+  "Odds Ratio Haldane": {
+    "dataset": {
+      "type": "Contingency",
+      "rowGroups": [
+        {
+          "id": "R1",
+          "name": "R1"
+        },
+        {
+          "id": "R2",
+          "name": "R2"
+        }
+      ],
+      "columnGroups": [
+        {
+          "id": "C1",
+          "name": "C1"
+        },
+        {
+          "id": "C2",
+          "name": "C2"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "R1",
+          "C1": 0,
+          "C2": 10
+        },
+        {
+          "rowTitle": "R2",
+          "C1": 5,
+          "C2": 5
+        }
+      ]
+    },
+    "options": {
+      "testId": "Fisher's Exact Test"
+    },
+    "expected": {
+      "statistic": null,
+      "p_value": null,
+      "effect_size": {
+        "odds_ratio": 0.047619,
+        "relative_risk": 0.090909
+      }
+    },
+    "tolerance": "1e-3"
+  },
+  "Nested ANOVA": {
+    "dataset": {
+      "type": "Grouped",
+      "rowGroups": [
+        {
+          "id": "S1",
+          "name": "S1"
+        },
+        {
+          "id": "S2",
+          "name": "S2"
+        }
+      ],
+      "columnGroups": [
+        {
+          "id": "G1",
+          "name": "G1"
+        },
+        {
+          "id": "G2",
+          "name": "G2"
+        }
+      ],
+      "config": {
+        "replicates": 2
+      },
+      "data": [
+        {
+          "rowTitle": "S1",
+          "G1_1": 1.2,
+          "G1_2": 1.4,
+          "G2_1": 0.8,
+          "G2_2": 1.1
+        },
+        {
+          "rowTitle": "S2",
+          "G1_1": 2.1,
+          "G1_2": 2.3,
+          "G2_1": 1.7,
+          "G2_2": 1.9
+        }
+      ]
+    },
+    "options": {
+      "testId": "Nested one-way ANOVA"
+    },
+    "expected": {
+      "p_value": 0.417,
+      "statistic": 1.0298
+    },
+    "tolerance": "1e-3",
+    "_note": "REML/GLS value (2025): the engine now computes nested tests via REML variance components with precision-weighted (GLS) treatment means, which reproduces Prism EXACTLY on a validated unbalanced case (t=1.792, F=3.210, p=0.1477). This particular 2x2x2 case is degenerate (among-subcolumn variance estimates to ~0), so REML pools toward the within-variance and gives F=1.030; the old 5.488 was the classical MS_treat/MS_subgroup fallback and was never Prism-validated. Ideally re-validate THIS case in Prism."
+  },
+  "Repeated Measures ANOVA": {
+    "dataset": {
+      "type": "Column",
+      "columnGroups": [
+        {
+          "id": "T1",
+          "name": "T1"
+        },
+        {
+          "id": "T2",
+          "name": "T2"
+        },
+        {
+          "id": "T3",
+          "name": "T3"
+        }
+      ],
+      "data": [
+        {
+          "id": "S1",
+          "T1": 1.2,
+          "T2": 1.5,
+          "T3": 1.9
+        },
+        {
+          "id": "S2",
+          "T1": 2.1,
+          "T2": 2.4,
+          "T3": 2.8
+        },
+        {
+          "id": "S3",
+          "T1": 0.8,
+          "T2": 1.0,
+          "T3": 1.3
+        }
+      ]
+    },
+    "options": {
+      "testId": "Repeated Measures ANOVA"
+    },
+    "expected": {
+      "statistic": 91.0,
+      "p_value": 0.010811,
+      "degrees_of_freedom": "2, 4"
+    },
+    "tolerance": "1e-3"
+  },
+  "Survival Hazard Ratio": {
+    "dataset": {
+      "type": "Survival",
+      "columnGroups": [
+        {
+          "id": "Group1",
+          "name": "Group1"
+        },
+        {
+          "id": "Group2",
+          "name": "Group2"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "10",
+          "Group1": 1,
+          "Group2": null
+        },
+        {
+          "rowTitle": "20",
+          "Group1": 1,
+          "Group2": null
+        },
+        {
+          "rowTitle": "30",
+          "Group1": 0,
+          "Group2": null
+        },
+        {
+          "rowTitle": "40",
+          "Group1": null,
+          "Group2": 1
+        },
+        {
+          "rowTitle": "50",
+          "Group1": null,
+          "Group2": 0
+        },
+        {
+          "rowTitle": "60",
+          "Group1": null,
+          "Group2": 1
+        }
+      ]
+    },
+    "options": {
+      "testId": "Hazard Ratios"
+    },
+    "expected": {
+      "statistic": 2.4694,
+      "p_value": 0.116083
+    },
+    "tolerance": "1e-3"
+  },
+  "Dunnett's T3": {
+    "dataset": {
+      "type": "Column",
+      "columnGroups": [
+        {
+          "id": "A",
+          "name": "A"
+        },
+        {
+          "id": "B",
+          "name": "B"
+        },
+        {
+          "id": "C",
+          "name": "C"
+        }
+      ],
+      "data": [
+        {
+          "A": 1,
+          "B": 2,
+          "C": 8
+        },
+        {
+          "A": 1.1,
+          "B": 2.5,
+          "C": 9
+        },
+        {
+          "A": 0.9,
+          "B": 1.8,
+          "C": 7.5
+        },
+        {
+          "A": 1.2,
+          "B": 2.2,
+          "C": 8.5
+        },
+        {
+          "A": 1.05,
+          "B": 2.1,
+          "C": 10
+        }
+      ]
+    },
+    "options": {
+      "testId": "Welch's ANOVA",
+      "postHocTest": "Dunnett's T3 test",
+      "postHocFamily": "all_pairs"
+    },
+    "expected": {
+      "statistic": null,
+      "p_value": null,
+      "post_hocs": {
+        "A vs B": 0.000732,
+        "A vs C": 0.000157,
+        "B vs C": 0.000157
+      }
+    },
+    "tolerance": "1e-3"
+  },
+  "One-Sample t-test": {
+    "dataset": {
+      "type": "Column",
+      "columnGroups": [
+        {
+          "id": "G1",
+          "name": "G1"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "1",
+          "G1": 1.2
+        },
+        {
+          "rowTitle": "2",
+          "G1": -0.5
+        },
+        {
+          "rowTitle": "3",
+          "G1": 0.8
+        },
+        {
+          "rowTitle": "4",
+          "G1": 1.5
+        },
+        {
+          "rowTitle": "5",
+          "G1": -0.2
+        },
+        {
+          "rowTitle": "6",
+          "G1": 0.9
+        },
+        {
+          "rowTitle": "7",
+          "G1": 1.1
+        },
+        {
+          "rowTitle": "8",
+          "G1": 0.3
+        }
+      ]
+    },
+    "options": {
+      "testId": "One-Sample t-test"
+    },
+    "expected": {
+      "statistic": 2.5578,
+      "degrees_of_freedom": "7",
+      "p_value": 0.0377
+    },
+    "tolerance": "1e-3"
+  },
+  "One-Sample Wilcoxon": {
+    "dataset": {
+      "type": "Column",
+      "columnGroups": [
+        {
+          "id": "G1",
+          "name": "G1"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "1",
+          "G1": 1.2
+        },
+        {
+          "rowTitle": "2",
+          "G1": -0.5
+        },
+        {
+          "rowTitle": "3",
+          "G1": 0.8
+        },
+        {
+          "rowTitle": "4",
+          "G1": 1.5
+        },
+        {
+          "rowTitle": "5",
+          "G1": -0.2
+        },
+        {
+          "rowTitle": "6",
+          "G1": 0.9
+        },
+        {
+          "rowTitle": "7",
+          "G1": 1.1
+        },
+        {
+          "rowTitle": "8",
+          "G1": 0.3
+        }
+      ]
+    },
+    "options": {
+      "testId": "One-Sample Wilcoxon signed-rank test"
+    },
+    "expected": {
+      "statistic": 4.0,
+      "p_value": 0.0547
+    },
+    "tolerance": "1e-3"
+  },
+  "One-Sample Sign test": {
+    "dataset": {
+      "type": "Column",
+      "columnGroups": [
+        {
+          "id": "G1",
+          "name": "G1"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "1",
+          "G1": 1.2
+        },
+        {
+          "rowTitle": "2",
+          "G1": -0.5
+        },
+        {
+          "rowTitle": "3",
+          "G1": 0.8
+        },
+        {
+          "rowTitle": "4",
+          "G1": 1.5
+        },
+        {
+          "rowTitle": "5",
+          "G1": -0.2
+        },
+        {
+          "rowTitle": "6",
+          "G1": 0.9
+        },
+        {
+          "rowTitle": "7",
+          "G1": 1.1
+        },
+        {
+          "rowTitle": "8",
+          "G1": 0.3
+        }
+      ]
+    },
+    "options": {
+      "testId": "One-Sample Sign test"
+    },
+    "expected": {
+      "p_value": 0.2891
+    },
+    "tolerance": "1e-3"
+  },
+  "Kolmogorov-Smirnov (2-sample)": {
+    "dataset": {
+      "type": "Column",
+      "columnGroups": [
+        {
+          "id": "G1",
+          "name": "G1"
+        },
+        {
+          "id": "G2",
+          "name": "G2"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "1",
+          "G1": 1.2,
+          "G2": 2.1
+        },
+        {
+          "rowTitle": "2",
+          "G1": -0.5,
+          "G2": 1.8
+        },
+        {
+          "rowTitle": "3",
+          "G1": 0.8,
+          "G2": 2.5
+        },
+        {
+          "rowTitle": "4",
+          "G1": 1.5,
+          "G2": 1.9
+        },
+        {
+          "rowTitle": "5",
+          "G1": -0.2,
+          "G2": 2.2
+        },
+        {
+          "rowTitle": "6",
+          "G1": 0.9,
+          "G2": 2.0
+        },
+        {
+          "rowTitle": "7",
+          "G1": 1.1,
+          "G2": 2.3
+        },
+        {
+          "rowTitle": "8",
+          "G1": 0.3,
+          "G2": 1.7
+        }
+      ]
+    },
+    "options": {
+      "testId": "Kolmogorov-Smirnov test"
+    },
+    "expected": {
+      "statistic": 1.0,
+      "p_value": 0.0002
+    },
+    "tolerance": "1e-3"
+  },
+  "Paired Sign test": {
+    "dataset": {
+      "type": "Column",
+      "columnGroups": [
+        {
+          "id": "G1",
+          "name": "G1"
+        },
+        {
+          "id": "G2",
+          "name": "G2"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "1",
+          "G1": 1.2,
+          "G2": 2.1
+        },
+        {
+          "rowTitle": "2",
+          "G1": -0.5,
+          "G2": 1.8
+        },
+        {
+          "rowTitle": "3",
+          "G1": 0.8,
+          "G2": 2.5
+        },
+        {
+          "rowTitle": "4",
+          "G1": 1.5,
+          "G2": 1.9
+        },
+        {
+          "rowTitle": "5",
+          "G1": -0.2,
+          "G2": 2.2
+        },
+        {
+          "rowTitle": "6",
+          "G1": 0.9,
+          "G2": 2.0
+        },
+        {
+          "rowTitle": "7",
+          "G1": 1.1,
+          "G2": 2.3
+        },
+        {
+          "rowTitle": "8",
+          "G1": 0.3,
+          "G2": 1.7
+        }
+      ]
+    },
+    "options": {
+      "testId": "Paired Sign test"
+    },
+    "expected": {
+      "p_value": 0.0078
+    },
+    "tolerance": "1e-3"
+  },
+  "Welch's ANOVA": {
+    "dataset": {
+      "type": "Column",
+      "columnGroups": [
+        {
+          "id": "ctrl",
+          "name": "ctrl"
+        },
+        {
+          "id": "trt1",
+          "name": "trt1"
+        },
+        {
+          "id": "trt2",
+          "name": "trt2"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "1",
+          "ctrl": 1,
+          "trt1": 2,
+          "trt2": 1
+        },
+        {
+          "rowTitle": "2",
+          "ctrl": 2,
+          "trt1": 4,
+          "trt2": 1
+        },
+        {
+          "rowTitle": "3",
+          "ctrl": 3,
+          "trt1": 6,
+          "trt2": 2
+        },
+        {
+          "rowTitle": "4",
+          "ctrl": 4,
+          "trt1": 8,
+          "trt2": 2
+        },
+        {
+          "rowTitle": "5",
+          "ctrl": 5,
+          "trt1": 10,
+          "trt2": 3
+        }
+      ]
+    },
+    "options": {
+      "testId": "Welch's ANOVA"
+    },
+    "expected": {
+      "statistic": 4.365,
+      "p_value": 0.0612
+    },
+    "tolerance": "1e-3"
+  },
+  "Brown-Forsythe ANOVA": {
+    "dataset": {
+      "type": "Column",
+      "columnGroups": [
+        {
+          "id": "ctrl",
+          "name": "ctrl"
+        },
+        {
+          "id": "trt1",
+          "name": "trt1"
+        },
+        {
+          "id": "trt2",
+          "name": "trt2"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "1",
+          "ctrl": 1,
+          "trt1": 2,
+          "trt2": 1
+        },
+        {
+          "rowTitle": "2",
+          "ctrl": 2,
+          "trt1": 4,
+          "trt2": 1
+        },
+        {
+          "rowTitle": "3",
+          "ctrl": 3,
+          "trt1": 6,
+          "trt2": 2
+        },
+        {
+          "rowTitle": "4",
+          "ctrl": 4,
+          "trt1": 8,
+          "trt2": 2
+        },
+        {
+          "rowTitle": "5",
+          "ctrl": 5,
+          "trt1": 10,
+          "trt2": 3
+        }
+      ]
+    },
+    "options": {
+      "testId": "Brown-Forsythe ANOVA"
+    },
+    "expected": {
+      "statistic": 5.3182,
+      "p_value": 0.0426
+    },
+    "tolerance": "1e-3"
+  },
+  "McNemar's Test": {
+    "dataset": {
+      "type": "Contingency",
+      "rowGroups": [
+        {
+          "id": "R1",
+          "name": "R1"
+        },
+        {
+          "id": "R2",
+          "name": "R2"
+        }
+      ],
+      "columnGroups": [
+        {
+          "id": "C1",
+          "name": "C1"
+        },
+        {
+          "id": "C2",
+          "name": "C2"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "R1",
+          "C1": 20,
+          "C2": 5
+        },
+        {
+          "rowTitle": "R2",
+          "C1": 10,
+          "C2": 15
+        }
+      ]
+    },
+    "options": {
+      "testId": "McNemar's Test"
+    },
+    "expected": {
+      "statistic": 5,
+      "p_value": 0.3018
+    },
+    "tolerance": "1e-3"
+  },
+  "Diagnostic (Sens/Spec)": {
+    "dataset": {
+      "type": "Contingency",
+      "rowGroups": [
+        {
+          "id": "R1",
+          "name": "R1"
+        },
+        {
+          "id": "R2",
+          "name": "R2"
+        }
+      ],
+      "columnGroups": [
+        {
+          "id": "C1",
+          "name": "C1"
+        },
+        {
+          "id": "C2",
+          "name": "C2"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "R1",
+          "C1": 90,
+          "C2": 10
+        },
+        {
+          "rowTitle": "R2",
+          "C1": 20,
+          "C2": 80
+        }
+      ]
+    },
+    "options": {
+      "testId": "Diagnostic Test (Sensitivity/Specificity)"
+    },
+    "expected": {
+      "report_contains": [
+        "Accuracy",
+        "0.850",
+        "Sensitivity",
+        "0.900",
+        "Specificity",
+        "0.800",
+        "PPV",
+        "0.818",
+        "NPV",
+        "0.889"
+      ]
+    },
+    "tolerance": "1e-3"
+  },
+  "Correlation (Pearson)": {
+    "dataset": {
+      "type": "XY",
+      "columnGroups": [
+        {
+          "id": "X",
+          "name": "X"
+        },
+        {
+          "id": "Y",
+          "name": "Y"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "1",
+          "X": 1,
+          "Y": 2.1
+        },
+        {
+          "rowTitle": "2",
+          "X": 2,
+          "Y": 3.9
+        },
+        {
+          "rowTitle": "3",
+          "X": 3,
+          "Y": 6.2
+        },
+        {
+          "rowTitle": "4",
+          "X": 4,
+          "Y": 8.1
+        },
+        {
+          "rowTitle": "5",
+          "X": 5,
+          "Y": 9.9
+        },
+        {
+          "rowTitle": "6",
+          "X": 6,
+          "Y": 12.1
+        },
+        {
+          "rowTitle": "7",
+          "X": 7,
+          "Y": 13.8
+        },
+        {
+          "rowTitle": "8",
+          "X": 8,
+          "Y": 16.2
+        }
+      ]
+    },
+    "options": {
+      "testId": "Correlation (Pearson)"
+    },
+    "expected": {
+      "report_contains": "1.000"
+    },
+    "tolerance": "1e-3"
+  },
+  "Correlation (Spearman)": {
+    "dataset": {
+      "type": "XY",
+      "columnGroups": [
+        {
+          "id": "X",
+          "name": "X"
+        },
+        {
+          "id": "Y",
+          "name": "Y"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "1",
+          "X": 1,
+          "Y": 2.1
+        },
+        {
+          "rowTitle": "2",
+          "X": 2,
+          "Y": 3.9
+        },
+        {
+          "rowTitle": "3",
+          "X": 3,
+          "Y": 6.2
+        },
+        {
+          "rowTitle": "4",
+          "X": 4,
+          "Y": 8.1
+        },
+        {
+          "rowTitle": "5",
+          "X": 5,
+          "Y": 9.9
+        },
+        {
+          "rowTitle": "6",
+          "X": 6,
+          "Y": 12.1
+        },
+        {
+          "rowTitle": "7",
+          "X": 7,
+          "Y": 13.8
+        },
+        {
+          "rowTitle": "8",
+          "X": 8,
+          "Y": 16.2
+        }
+      ]
+    },
+    "options": {
+      "testId": "Correlation (Spearman)"
+    },
+    "expected": {
+      "report_contains": [
+        "1.00"
+      ]
+    },
+    "tolerance": "1e-3"
+  },
+  "Simple Linear Regression": {
+    "dataset": {
+      "type": "XY",
+      "columnGroups": [
+        {
+          "id": "X",
+          "name": "X"
+        },
+        {
+          "id": "Y",
+          "name": "Y"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "1",
+          "X": 1,
+          "Y": 2.1
+        },
+        {
+          "rowTitle": "2",
+          "X": 2,
+          "Y": 3.9
+        },
+        {
+          "rowTitle": "3",
+          "X": 3,
+          "Y": 6.2
+        },
+        {
+          "rowTitle": "4",
+          "X": 4,
+          "Y": 8.1
+        },
+        {
+          "rowTitle": "5",
+          "X": 5,
+          "Y": 9.9
+        },
+        {
+          "rowTitle": "6",
+          "X": 6,
+          "Y": 12.1
+        },
+        {
+          "rowTitle": "7",
+          "X": 7,
+          "Y": 13.8
+        },
+        {
+          "rowTitle": "8",
+          "X": 8,
+          "Y": 16.2
+        }
+      ]
+    },
+    "options": {
+      "testId": "Simple Linear Regression"
+    },
+    "expected": {
+      "report_contains": "0.054"
+    },
+    "tolerance": "1e-3"
+  },
+  "Area Under Curve": {
+    "dataset": {
+      "type": "XY",
+      "columnGroups": [
+        {
+          "id": "X",
+          "name": "X"
+        },
+        {
+          "id": "Y",
+          "name": "Y"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "1",
+          "X": 0,
+          "Y": 0
+        },
+        {
+          "rowTitle": "2",
+          "X": 1,
+          "Y": 2
+        },
+        {
+          "rowTitle": "3",
+          "X": 2,
+          "Y": 4
+        },
+        {
+          "rowTitle": "4",
+          "X": 3,
+          "Y": 2
+        },
+        {
+          "rowTitle": "5",
+          "X": 4,
+          "Y": 0
+        }
+      ]
+    },
+    "options": {
+      "testId": "Area Under Curve"
+    },
+    "expected": {
+      "statistic": 8.0
+    },
+    "tolerance": "1e-3"
+  },
+  "Nonlinear Curve Fitting": {
+    "dataset": {
+      "type": "XY",
+      "columnGroups": [
+        {
+          "id": "X",
+          "name": "X"
+        },
+        {
+          "id": "Y",
+          "name": "Y"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "1",
+          "X": 1,
+          "Y": 2.7
+        },
+        {
+          "rowTitle": "2",
+          "X": 2,
+          "Y": 7.4
+        },
+        {
+          "rowTitle": "3",
+          "X": 3,
+          "Y": 20
+        },
+        {
+          "rowTitle": "4",
+          "X": 4,
+          "Y": 54
+        },
+        {
+          "rowTitle": "5",
+          "X": 5,
+          "Y": 148
+        },
+        {
+          "rowTitle": "6",
+          "X": 6,
+          "Y": 403
+        }
+      ]
+    },
+    "options": {
+      "testId": "Nonlinear Curve Fitting"
+    },
+    "expected": {
+      "report_contains": [
+        "R\u00b2",
+        "1.00"
+      ]
+    },
+    "tolerance": "1e-3"
+  },
+  "Simple Logistic Regression": {
+    "dataset": {
+      "type": "XY",
+      "columnGroups": [
+        {
+          "id": "X",
+          "name": "X"
+        },
+        {
+          "id": "Y",
+          "name": "Y"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "1",
+          "X": 1,
+          "Y": 0
+        },
+        {
+          "rowTitle": "2",
+          "X": 2,
+          "Y": 0
+        },
+        {
+          "rowTitle": "3",
+          "X": 3,
+          "Y": 0
+        },
+        {
+          "rowTitle": "4",
+          "X": 4,
+          "Y": 0
+        },
+        {
+          "rowTitle": "5",
+          "X": 5,
+          "Y": 1
+        },
+        {
+          "rowTitle": "6",
+          "X": 6,
+          "Y": 1
+        },
+        {
+          "rowTitle": "7",
+          "X": 7,
+          "Y": 1
+        },
+        {
+          "rowTitle": "8",
+          "X": 8,
+          "Y": 1
+        }
+      ]
+    },
+    "options": {
+      "testId": "Simple Logistic Regression"
+    },
+    "expected": {
+      "report_contains": "1.00"
+    },
+    "tolerance": "1e-3"
+  },
+  "Row Statistics": {
+    "dataset": {
+      "type": "XY",
+      "columnGroups": [
+        {
+          "id": "X",
+          "name": "X"
+        },
+        {
+          "id": "Y",
+          "name": "Y"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "1",
+          "X": 1,
+          "Y": 2.1
+        },
+        {
+          "rowTitle": "2",
+          "X": 2,
+          "Y": 3.9
+        },
+        {
+          "rowTitle": "3",
+          "X": 3,
+          "Y": 6.2
+        },
+        {
+          "rowTitle": "4",
+          "X": 4,
+          "Y": 8.1
+        },
+        {
+          "rowTitle": "5",
+          "X": 5,
+          "Y": 9.9
+        },
+        {
+          "rowTitle": "6",
+          "X": 6,
+          "Y": 12.1
+        },
+        {
+          "rowTitle": "7",
+          "X": 7,
+          "Y": 13.8
+        },
+        {
+          "rowTitle": "8",
+          "X": 8,
+          "Y": 16.2
+        }
+      ]
+    },
+    "options": {
+      "testId": "Row Statistics"
+    },
+    "expected": {
+      "report_contains": [
+        "Mean",
+        "SD",
+        "SE"
+      ]
+    },
+    "tolerance": "1e-3"
+  },
+  "Chi-Square goodness of fit": {
+    "dataset": {
+      "type": "PartsOfWhole",
+      "columnGroups": [
+        {
+          "id": "counts",
+          "name": "counts"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "1",
+          "counts": 30
+        },
+        {
+          "rowTitle": "2",
+          "counts": 25
+        },
+        {
+          "rowTitle": "3",
+          "counts": 20
+        },
+        {
+          "rowTitle": "4",
+          "counts": 25
+        }
+      ]
+    },
+    "options": {
+      "testId": "Chi-Square goodness of fit"
+    },
+    "expected": {
+      "statistic": 2.0,
+      "p_value": 0.5724
+    },
+    "tolerance": "1e-3"
+  },
+  "Binomial test": {
+    "dataset": {
+      "type": "PartsOfWhole",
+      "columnGroups": [
+        {
+          "id": "counts",
+          "name": "counts"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "1",
+          "counts": 60
+        },
+        {
+          "rowTitle": "2",
+          "counts": 40
+        }
+      ]
+    },
+    "options": {
+      "testId": "Binomial test"
+    },
+    "expected": {
+      "p_value": 0.0569
+    },
+    "tolerance": "1e-3"
+  },
+  "Multiple Linear Regression": {
+    "dataset": {
+      "type": "MultipleVariables",
+      "columnGroups": [
+        {
+          "id": "X1",
+          "name": "X1"
+        },
+        {
+          "id": "X2",
+          "name": "X2"
+        },
+        {
+          "id": "Y",
+          "name": "Y"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "1",
+          "X1": 1,
+          "X2": 2,
+          "Y": 3
+        },
+        {
+          "rowTitle": "2",
+          "X1": 2,
+          "X2": 1,
+          "Y": 4
+        },
+        {
+          "rowTitle": "3",
+          "X1": 3,
+          "X2": 4,
+          "Y": 8
+        },
+        {
+          "rowTitle": "4",
+          "X1": 4,
+          "X2": 3,
+          "Y": 7
+        },
+        {
+          "rowTitle": "5",
+          "X1": 5,
+          "X2": 6,
+          "Y": 12
+        },
+        {
+          "rowTitle": "6",
+          "X1": 6,
+          "X2": 5,
+          "Y": 11
+        }
+      ]
+    },
+    "options": {
+      "testId": "Multiple Linear Regression"
+    },
+    "expected": {
+      "statistic": 72.188
+    },
+    "tolerance": "1e-3"
+  },
+  "Poisson Regression": {
+    "dataset": {
+      "type": "MultipleVariables",
+      "columnGroups": [
+        {
+          "id": "X",
+          "name": "X"
+        },
+        {
+          "id": "Y",
+          "name": "Y"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "1",
+          "X": 1,
+          "Y": 1
+        },
+        {
+          "rowTitle": "2",
+          "X": 2,
+          "Y": 2
+        },
+        {
+          "rowTitle": "3",
+          "X": 3,
+          "Y": 2
+        },
+        {
+          "rowTitle": "4",
+          "X": 4,
+          "Y": 4
+        },
+        {
+          "rowTitle": "5",
+          "X": 5,
+          "Y": 6
+        },
+        {
+          "rowTitle": "6",
+          "X": 6,
+          "Y": 8
+        },
+        {
+          "rowTitle": "7",
+          "X": 7,
+          "Y": 11
+        },
+        {
+          "rowTitle": "8",
+          "X": 8,
+          "Y": 15
+        }
+      ]
+    },
+    "options": {
+      "testId": "Poisson Regression"
+    },
+    "expected": {
+      "report_contains": [
+        "0.3587",
+        "1.4314"
+      ]
+    },
+    "tolerance": "1e-3"
+  },
+  "Multiple Logistic Regression": {
+    "dataset": {
+      "type": "MultipleVariables",
+      "columnGroups": [
+        {
+          "id": "X1",
+          "name": "X1"
+        },
+        {
+          "id": "X2",
+          "name": "X2"
+        },
+        {
+          "id": "Y",
+          "name": "Y"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "1",
+          "X1": 1,
+          "X2": 1,
+          "Y": 0
+        },
+        {
+          "rowTitle": "2",
+          "X1": 2,
+          "X2": 3,
+          "Y": 0
+        },
+        {
+          "rowTitle": "3",
+          "X1": 3,
+          "X2": 2,
+          "Y": 0
+        },
+        {
+          "rowTitle": "4",
+          "X1": 4,
+          "X2": 5,
+          "Y": 1
+        },
+        {
+          "rowTitle": "5",
+          "X1": 5,
+          "X2": 4,
+          "Y": 0
+        },
+        {
+          "rowTitle": "6",
+          "X1": 6,
+          "X2": 7,
+          "Y": 1
+        },
+        {
+          "rowTitle": "7",
+          "X1": 7,
+          "X2": 6,
+          "Y": 1
+        },
+        {
+          "rowTitle": "8",
+          "X1": 8,
+          "X2": 9,
+          "Y": 1
+        }
+      ]
+    },
+    "options": {
+      "testId": "Multiple Logistic Regression"
+    },
+    "expected": {
+      "report_contains": [
+        "Multiple Logistic Regression"
+      ]
+    },
+    "tolerance": "1e-3"
+  },
+  "Principal Component Analysis (PCA)": {
+    "dataset": {
+      "type": "MultipleVariables",
+      "columnGroups": [
+        {
+          "id": "V1",
+          "name": "V1"
+        },
+        {
+          "id": "V2",
+          "name": "V2"
+        },
+        {
+          "id": "V3",
+          "name": "V3"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "1",
+          "V1": 1,
+          "V2": 2.1,
+          "V3": 5
+        },
+        {
+          "rowTitle": "2",
+          "V1": 2,
+          "V2": 3.9,
+          "V3": 3
+        },
+        {
+          "rowTitle": "3",
+          "V1": 3,
+          "V2": 6.2,
+          "V3": 6
+        },
+        {
+          "rowTitle": "4",
+          "V1": 4,
+          "V2": 8.1,
+          "V3": 2
+        },
+        {
+          "rowTitle": "5",
+          "V1": 5,
+          "V2": 9.9,
+          "V3": 7
+        },
+        {
+          "rowTitle": "6",
+          "V1": 6,
+          "V2": 12.1,
+          "V3": 1
+        },
+        {
+          "rowTitle": "7",
+          "V1": 7,
+          "V2": 13.8,
+          "V3": 8
+        },
+        {
+          "rowTitle": "8",
+          "V1": 8,
+          "V2": 16.2,
+          "V3": 4
+        }
+      ]
+    },
+    "options": {
+      "testId": "Principal Component Analysis (PCA)"
+    },
+    "expected": {
+      "report_contains": [
+        "67.16",
+        "32.82",
+        "0.01"
+      ]
+    },
+    "tolerance": "1e-2"
+  },
+  "Correlation Matrix": {
+    "dataset": {
+      "type": "MultipleVariables",
+      "columnGroups": [
+        {
+          "id": "V1",
+          "name": "V1"
+        },
+        {
+          "id": "V2",
+          "name": "V2"
+        },
+        {
+          "id": "V3",
+          "name": "V3"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "1",
+          "V1": 1,
+          "V2": 2.1,
+          "V3": 5
+        },
+        {
+          "rowTitle": "2",
+          "V1": 2,
+          "V2": 3.9,
+          "V3": 3
+        },
+        {
+          "rowTitle": "3",
+          "V1": 3,
+          "V2": 6.2,
+          "V3": 6
+        },
+        {
+          "rowTitle": "4",
+          "V1": 4,
+          "V2": 8.1,
+          "V3": 2
+        },
+        {
+          "rowTitle": "5",
+          "V1": 5,
+          "V2": 9.9,
+          "V3": 7
+        },
+        {
+          "rowTitle": "6",
+          "V1": 6,
+          "V2": 12.1,
+          "V3": 1
+        },
+        {
+          "rowTitle": "7",
+          "V1": 7,
+          "V2": 13.8,
+          "V3": 8
+        },
+        {
+          "rowTitle": "8",
+          "V1": 8,
+          "V2": 16.2,
+          "V3": 4
+        }
+      ]
+    },
+    "options": {
+      "testId": "Correlation Matrix"
+    },
+    "expected": {
+      "report_contains": "1.0"
+    },
+    "tolerance": "1e-3"
+  },
+  "Three-way ANOVA": {
+    "dataset": {
+      "type": "MultipleVariables",
+      "columnGroups": [
+        {
+          "id": "F1",
+          "name": "F1"
+        },
+        {
+          "id": "F2",
+          "name": "F2"
+        },
+        {
+          "id": "F3",
+          "name": "F3"
+        },
+        {
+          "id": "Y",
+          "name": "Y"
+        }
+      ],
+      "data": [
+        {
+          "rowTitle": "1",
+          "F1": "A",
+          "F2": "X",
+          "F3": "P",
+          "Y": 4.3
+        },
+        {
+          "rowTitle": "2",
+          "F1": "A",
+          "F2": "X",
+          "F3": "P",
+          "Y": 3.7
+        },
+        {
+          "rowTitle": "3",
+          "F1": "A",
+          "F2": "X",
+          "F3": "Q",
+          "Y": 5.3
+        },
+        {
+          "rowTitle": "4",
+          "F1": "A",
+          "F2": "X",
+          "F3": "Q",
+          "Y": 4.7
+        },
+        {
+          "rowTitle": "5",
+          "F1": "A",
+          "F2": "Y",
+          "F3": "P",
+          "Y": 6.3
+        },
+        {
+          "rowTitle": "6",
+          "F1": "A",
+          "F2": "Y",
+          "F3": "P",
+          "Y": 5.7
+        },
+        {
+          "rowTitle": "7",
+          "F1": "A",
+          "F2": "Y",
+          "F3": "Q",
+          "Y": 7.3
+        },
+        {
+          "rowTitle": "8",
+          "F1": "A",
+          "F2": "Y",
+          "F3": "Q",
+          "Y": 6.7
+        },
+        {
+          "rowTitle": "9",
+          "F1": "B",
+          "F2": "X",
+          "F3": "P",
+          "Y": 9.3
+        },
+        {
+          "rowTitle": "10",
+          "F1": "B",
+          "F2": "X",
+          "F3": "P",
+          "Y": 8.7
+        },
+        {
+          "rowTitle": "11",
+          "F1": "B",
+          "F2": "X",
+          "F3": "Q",
+          "Y": 10.3
+        },
+        {
+          "rowTitle": "12",
+          "F1": "B",
+          "F2": "X",
+          "F3": "Q",
+          "Y": 9.7
+        },
+        {
+          "rowTitle": "13",
+          "F1": "B",
+          "F2": "Y",
+          "F3": "P",
+          "Y": 8.3
+        },
+        {
+          "rowTitle": "14",
+          "F1": "B",
+          "F2": "Y",
+          "F3": "P",
+          "Y": 7.7
+        },
+        {
+          "rowTitle": "15",
+          "F1": "B",
+          "F2": "Y",
+          "F3": "Q",
+          "Y": 14.3
+        },
+        {
+          "rowTitle": "16",
+          "F1": "B",
+          "F2": "Y",
+          "F3": "Q",
+          "Y": 13.7
+        }
+      ]
+    },
+    "options": {
+      "testId": "Three-way ANOVA"
+    },
+    "expected": {
+      "report_contains": "501.389"
+    },
+    "tolerance": "1e-2"
+  },
+  "ART ANOVA": {
+    "dataset": {
+      "type": "Grouped",
+      "rowGroups": [
+        {
+          "id": "A1",
+          "name": "A1"
+        },
+        {
+          "id": "A2",
+          "name": "A2"
+        }
+      ],
+      "columnGroups": [
+        {
+          "id": "B1",
+          "name": "B1"
+        },
+        {
+          "id": "B2",
+          "name": "B2"
+        }
+      ],
+      "config": {
+        "replicates": 3
+      },
+      "data": [
+        {
+          "rowTitle": "A1",
+          "B1_1": 2,
+          "B1_2": 3,
+          "B1_3": 4,
+          "B2_1": 5,
+          "B2_2": 6,
+          "B2_3": 7
+        },
+        {
+          "rowTitle": "A2",
+          "B1_1": 3,
+          "B1_2": 4,
+          "B1_3": 5,
+          "B2_1": 9,
+          "B2_2": 10,
+          "B2_3": 11
+        }
+      ]
+    },
+    "options": {
+      "testId": "ART ANOVA (Non-parametric)"
+    },
+    "expected": {
+      "report_contains": [
+        "Row",
+        "27.000",
+        "Column",
+        "27.000",
+        "Interaction",
+        "7.000"
+      ]
+    },
+    "tolerance": "1e-3"
+  },
+  "Mixed-effects ANOVA": {
+    "dataset": {
+      "type": "Grouped",
+      "rowGroups": [
+        {
+          "id": "A1",
+          "name": "A1"
+        },
+        {
+          "id": "A2",
+          "name": "A2"
+        }
+      ],
+      "columnGroups": [
+        {
+          "id": "B1",
+          "name": "B1"
+        },
+        {
+          "id": "B2",
+          "name": "B2"
+        }
+      ],
+      "config": {
+        "replicates": 3
+      },
+      "data": [
+        {
+          "rowTitle": "A1",
+          "B1_1": 2,
+          "B1_2": 3,
+          "B1_3": 4,
+          "B2_1": 5,
+          "B2_2": 6,
+          "B2_3": 7
+        },
+        {
+          "rowTitle": "A2",
+          "B1_1": 3,
+          "B1_2": 4,
+          "B1_3": 5,
+          "B2_1": 9,
+          "B2_2": 10,
+          "B2_3": 11
+        }
+      ]
+    },
+    "options": {
+      "testId": "Mixed-effects ANOVA"
+    },
+    "expected": {
+      "report_contains": [
+        "Mixed-effects"
+      ]
+    },
+    "tolerance": "1e-3"
+  }
+}
