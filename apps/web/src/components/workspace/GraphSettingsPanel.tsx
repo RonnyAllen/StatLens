@@ -35,6 +35,7 @@ export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAn
       equationFontSize: config.equationFontSize,
       pointSize: config.pointSize,
       fontFamily: config.fontFamily,
+      palette: config.palette,
     };
     sessionStorage.setItem("statlens_copied_format", JSON.stringify(formatToCopy));
     setCopiedFormat(formatToCopy);
@@ -58,7 +59,7 @@ export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAn
           <button 
             onClick={handleCopyFormat}
             className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-            title="Copy formatting (font sizes, font family, point size)"
+            title="Copy formatting (font sizes, font family, point size, color palette)"
           >
             <Copy size={16} />
           </button>
@@ -76,9 +77,9 @@ export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAn
       {/* Chart Type */}
       {onChangeChartType && (
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium">Chart Type</label>
+          <label className="text-base font-medium">Chart Type</label>
           <select 
-            className="p-2 border rounded-md text-sm bg-background"
+            className="p-2 border rounded-md text-base bg-background"
             value={chartType === "box" && config.notched ? "notched_box" : (chartType === "raincloud" && config.notched ? "notched_raincloud" : chartType)}
             onChange={(e) => {
               const val = e.target.value;
@@ -116,10 +117,10 @@ export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAn
 
       {/* Axis Labels */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium">Y-Axis Label</label>
+        <label className="text-base font-medium">Y-Axis Label</label>
         <input 
           type="text" 
-          className="p-2 border rounded-md text-sm bg-background"
+          className="p-2 border rounded-md text-base bg-background"
           placeholder="Value"
           value={config.yAxisTitle || ""}
           onChange={(e) => handleChange("yAxisTitle", e.target.value)}
@@ -136,10 +137,10 @@ export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAn
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium">X-Axis Label</label>
+        <label className="text-base font-medium">X-Axis Label</label>
         <input 
           type="text" 
-          className="p-2 border rounded-md text-sm bg-background"
+          className="p-2 border rounded-md text-base bg-background"
           placeholder="Group"
           value={config.xAxisTitle || ""}
           onChange={(e) => handleChange("xAxisTitle", e.target.value)}
@@ -160,7 +161,7 @@ export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAn
           <label className="text-xs font-medium">Y Min</label>
           <input 
             type="number" 
-            className="p-2 border rounded-md text-sm bg-background"
+            className="p-2 border rounded-md text-base bg-background"
             placeholder="Auto"
             value={config.yAxisMin ?? ""}
             onChange={(e) => handleChange("yAxisMin", e.target.value === "" ? undefined : Number(e.target.value))}
@@ -170,7 +171,7 @@ export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAn
           <label className="text-xs font-medium">Y Max</label>
           <input 
             type="number" 
-            className="p-2 border rounded-md text-sm bg-background"
+            className="p-2 border rounded-md text-base bg-background"
             placeholder="Auto"
             value={config.yAxisMax ?? ""}
             onChange={(e) => handleChange("yAxisMax", e.target.value === "" ? undefined : Number(e.target.value))}
@@ -180,7 +181,7 @@ export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAn
           <label className="text-xs font-medium">Y Step</label>
           <input 
             type="number" 
-            className="p-2 border rounded-md text-sm bg-background"
+            className="p-2 border rounded-md text-base bg-background"
             placeholder="Auto"
             value={config.yAxisStep ?? ""}
             onChange={(e) => handleChange("yAxisStep", e.target.value === "" ? undefined : Number(e.target.value))}
@@ -190,9 +191,9 @@ export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAn
 
       {/* Linked Analysis */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium">Statistical Results</label>
+        <label className="text-base font-medium">Statistical Results</label>
         <select 
-          className="p-2 border rounded-md text-sm bg-background"
+          className="p-2 border rounded-md text-base bg-background"
           value={graph.analysisId || ""}
           onChange={(e) => onChangeAnalysis?.(e.target.value === "" ? undefined : e.target.value)}
         >
@@ -209,9 +210,9 @@ export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAn
       {/* Error Bars */}
       {(chartType === "bar-error" || chartType === "scatter") && (
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium">Error Bars</label>
+          <label className="text-base font-medium">Error Bars</label>
           <select 
-            className="p-2 border rounded-md text-sm bg-background"
+            className="p-2 border rounded-md text-base bg-background"
             value={config.errorBarType}
             onChange={(e) => handleChange("errorBarType", e.target.value)}
           >
@@ -223,25 +224,63 @@ export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAn
       )}
 
         {chartType === "km-step" && (
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <input 
-                type="checkbox" 
-                id="errorBars"
-                checked={config.errorBars ?? true}
-                onChange={(e) => handleChange("errorBars", e.target.checked)}
-              />
-              <label htmlFor="errorBars" className="text-sm font-medium">Show 95% CI Band</label>
+          <>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-base font-medium">Show Survival As</label>
+              <select 
+                className="p-2 border rounded-md text-base bg-background"
+                value={config.survivalShowAs ?? "fractions"}
+                onChange={(e) => handleChange("survivalShowAs", e.target.value)}
+              >
+                <option value="fractions">Fractions</option>
+                <option value="percents">Percents</option>
+              </select>
             </div>
-          </div>
+            <div className="flex flex-col gap-1.5 mt-2">
+              <label className="text-base font-medium">Style</label>
+              <select 
+                className="p-2 border rounded-md text-base bg-background"
+                value={config.survivalStyle ?? "staircase-ticks"}
+                onChange={(e) => handleChange("survivalStyle", e.target.value)}
+              >
+                <option value="staircase-ticks">Staircase with Ticks</option>
+                <option value="staircase">Staircase</option>
+                <option value="connected-dots">Connected Dots</option>
+                <option value="dots-only">Dots Only</option>
+              </select>
+            </div>
+            <div className="flex flex-col gap-1.5 mt-2">
+              <label className="text-base font-medium">Symbols At</label>
+              <select 
+                className="p-2 border rounded-md text-base bg-background"
+                value={config.survivalSymbolsAt ?? "censored"}
+                onChange={(e) => handleChange("survivalSymbolsAt", e.target.value)}
+              >
+                <option value="censored">Censored Events Only</option>
+                <option value="all">All Events</option>
+              </select>
+            </div>
+            <div className="flex flex-col gap-1.5 mt-2">
+              <label className="text-base font-medium">Error Bars / Bands</label>
+              <select 
+                className="p-2 border rounded-md text-base bg-background"
+                value={config.errorBars ?? "none"}
+                onChange={(e) => handleChange("errorBars", e.target.value)}
+              >
+                <option value="none">None</option>
+                <option value="se">Standard Error (Bars)</option>
+                <option value="ci95">95% Confidence Interval (Band)</option>
+              </select>
+            </div>
+          </>
         )}
 
       {/* Range Dumbbell Options */}
       {chartType === "range-dumbbell" && (
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium">Range</label>
+          <label className="text-base font-medium">Range</label>
           <select 
-            className="p-2 border rounded-md text-sm bg-background"
+            className="p-2 border rounded-md text-base bg-background"
             value={config.rangeMode ?? "min_max"}
             onChange={(e) => handleChange("rangeMode", e.target.value)}
           >
@@ -256,9 +295,9 @@ export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAn
       {chartType === "ci-forest" && (
         <>
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Source</label>
+            <label className="text-base font-medium">Source</label>
             <select 
-              className="p-2 border rounded-md text-sm bg-background"
+              className="p-2 border rounded-md text-base bg-background"
               value={config.ciSource ?? "group_means"}
               onChange={(e) => handleChange("ciSource", e.target.value)}
             >
@@ -267,20 +306,20 @@ export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAn
             </select>
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">CI Level (%)</label>
+            <label className="text-base font-medium">CI Level (%)</label>
             <input 
               type="number" 
-              className="p-2 border rounded-md text-sm bg-background"
+              className="p-2 border rounded-md text-base bg-background"
               value={config.ciLevel ?? 95}
               onChange={(e) => handleChange("ciLevel", Number(e.target.value))}
               min={1} max={99}
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Reference Value</label>
+            <label className="text-base font-medium">Reference Value</label>
             <input 
               type="number" 
-              className="p-2 border rounded-md text-sm bg-background"
+              className="p-2 border rounded-md text-base bg-background"
               value={config.referenceValue ?? 0}
               onChange={(e) => handleChange("referenceValue", Number(e.target.value))}
             />
@@ -298,14 +337,14 @@ export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAn
               checked={config.showPoints}
               onChange={(e) => handleChange("showPoints", e.target.checked)}
             />
-            <label htmlFor="showPoints" className="text-sm font-medium">Show Individual Points</label>
+            <label htmlFor="showPoints" className="text-base font-medium">Show Individual Points</label>
           </div>
           {config.showPoints && (
             <div className="flex flex-col gap-1.5 ml-6">
               <label className="text-xs font-medium">Point Size</label>
               <input 
                 type="number" 
-                className="p-2 border rounded-md text-sm bg-background w-24"
+                className="p-2 border rounded-md text-base bg-background w-24"
                 value={config.pointSize ?? 3}
                 onChange={(e) => handleChange("pointSize", Number(e.target.value))}
                 min={1}
@@ -320,9 +359,9 @@ export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAn
       {chartType === "scatter" && (
         <>
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Line Style (XY)</label>
+            <label className="text-base font-medium">Line Style (XY)</label>
             <select 
-              className="p-2 border rounded-md text-sm bg-background"
+              className="p-2 border rounded-md text-base bg-background"
               value={config.lineStyle ?? "none"}
               onChange={(e) => handleChange("lineStyle", e.target.value)}
             >
@@ -333,9 +372,9 @@ export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAn
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Trendline (XY)</label>
+            <label className="text-base font-medium">Trendline (XY)</label>
             <select 
-              className="p-2 border rounded-md text-sm bg-background"
+              className="p-2 border rounded-md text-base bg-background"
               value={config.trendlineType ?? "none"}
               onChange={(e) => handleChange("trendlineType", e.target.value)}
             >
@@ -350,23 +389,47 @@ export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAn
 
       {/* Palette */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium">Color Palette</label>
+        <label className="text-base font-medium">Color Palette</label>
         <select 
-          className="p-2 border rounded-md text-sm bg-background"
+          className="p-2 border rounded-md text-base bg-background"
           value={config.palette}
           onChange={(e) => handleChange("palette", e.target.value)}
         >
-          <option value="okabe-ito">Okabe-Ito (Colorblind Safe)</option>
-          <option value="viridis">Viridis</option>
-          <option value="tableau">Tableau 10</option>
+          <optgroup label="Colourblind-safe">
+            <option value="okabe-ito">Okabe-Ito</option>
+            <option value="viridis">Viridis</option>
+            <option value="cividis">Cividis</option>
+            <option value="magma">Magma</option>
+          </optgroup>
+          <optgroup label="Journal">
+            <option value="nature">Nature</option>
+            <option value="lancet">Lancet</option>
+            <option value="jama">JAMA</option>
+          </optgroup>
+          <optgroup label="Qualitative">
+            <option value="tableau">Tableau Classic</option>
+            <option value="brewer-bold">Brewer Bold</option>
+            <option value="forest-dusk">Forest Dusk</option>
+            <option value="duo-tone">Duo Tone</option>
+          </optgroup>
+          <optgroup label="Thematic">
+            <option value="ocean">Ocean Breeze</option>
+            <option value="pastel">Soft Pastel</option>
+            <option value="neon">Neon Glow</option>
+            <option value="earth">Earthy Tones</option>
+            <option value="retro">Retro Warm</option>
+          </optgroup>
+          <optgroup label="Print">
+            <option value="grayscale">Grayscale</option>
+          </optgroup>
         </select>
       </div>
 
       {/* Significance Scale */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium">Significance Scale</label>
+        <label className="text-base font-medium">Significance Scale</label>
         <select 
-          className="p-2 border rounded-md text-sm bg-background"
+          className="p-2 border rounded-md text-base bg-background"
           value={config.significanceScale}
           onChange={(e) => handleChange("significanceScale", e.target.value)}
         >
@@ -374,22 +437,31 @@ export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAn
           <option value="raw">Raw (p=0.04)</option>
         </select>
         
-        <div className="flex items-center gap-2 mt-2">
+        <div className="flex items-center space-x-2">
           <input 
             type="checkbox" 
             id="showNsBrackets"
             checked={config.showNsBrackets ?? true}
             onChange={(e) => handleChange("showNsBrackets", e.target.checked)}
           />
-          <label htmlFor="showNsBrackets" className="text-sm font-medium">Show non-significant (ns) brackets</label>
+          <label htmlFor="showNsBrackets" className="text-base font-medium">Show non-significant (ns) brackets</label>
+        </div>
+        <div className="flex items-center space-x-2">
+          <input 
+            type="checkbox" 
+            id="showPostHocCaption"
+            checked={config.showPostHocCaption ?? true}
+            onChange={(e) => handleChange("showPostHocCaption", e.target.checked)}
+          />
+          <label htmlFor="showPostHocCaption" className="text-base font-medium">Show post-hoc method caption</label>
         </div>
       </div>
 
       {/* Background */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium">Export Background</label>
+        <label className="text-base font-medium">Export Background</label>
         <select 
-          className="p-2 border rounded-md text-sm bg-background"
+          className="p-2 border rounded-md text-base bg-background"
           value={config.background}
           onChange={(e) => handleChange("background", e.target.value)}
         >
@@ -399,9 +471,9 @@ export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAn
       </div>
       {/* Styling */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium">Font Family</label>
+        <label className="text-base font-medium">Font Family</label>
         <select 
-          className="p-2 border rounded-md text-sm bg-background"
+          className="p-2 border rounded-md text-base bg-background"
           value={config.fontFamily}
           onChange={(e) => handleChange("fontFamily", e.target.value)}
         >
@@ -439,7 +511,7 @@ export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAn
           <label className="text-xs font-medium">Base Font Size</label>
           <input 
             type="number" 
-            className="p-2 border rounded-md text-sm bg-background"
+            className="p-2 border rounded-md text-base bg-background"
             value={config.fontSize}
             onChange={(e) => handleChange("fontSize", Number(e.target.value))}
             min={8}
@@ -450,7 +522,7 @@ export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAn
           <label className="text-xs font-medium">Axis Title Size</label>
           <input 
             type="number" 
-            className="p-2 border rounded-md text-sm bg-background"
+            className="p-2 border rounded-md text-base bg-background"
             placeholder={String(config.fontSize + 2)}
             value={config.axisTitleFontSize ?? ""}
             onChange={(e) => handleChange("axisTitleFontSize", e.target.value === "" ? undefined : Number(e.target.value))}
@@ -462,7 +534,7 @@ export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAn
           <label className="text-xs font-medium">Axis Label Size</label>
           <input 
             type="number" 
-            className="p-2 border rounded-md text-sm bg-background"
+            className="p-2 border rounded-md text-base bg-background"
             placeholder={String(config.fontSize)}
             value={config.axisLabelFontSize ?? ""}
             onChange={(e) => handleChange("axisLabelFontSize", e.target.value === "" ? undefined : Number(e.target.value))}
@@ -474,7 +546,7 @@ export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAn
           <label className="text-xs font-medium">P-Value Size</label>
           <input 
             type="number" 
-            className="p-2 border rounded-md text-sm bg-background"
+            className="p-2 border rounded-md text-base bg-background"
             placeholder={String(config.significanceScale === "raw" ? config.fontSize : config.fontSize + 2)}
             value={config.pValueFontSize ?? ""}
             onChange={(e) => handleChange("pValueFontSize", e.target.value === "" ? undefined : Number(e.target.value))}
@@ -486,7 +558,7 @@ export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAn
           <label className="text-xs font-medium">Legend Size</label>
           <input 
             type="number" 
-            className="p-2 border rounded-md text-sm bg-background"
+            className="p-2 border rounded-md text-base bg-background"
             placeholder={String(config.fontSize)}
             value={config.legendFontSize ?? ""}
             onChange={(e) => handleChange("legendFontSize", e.target.value === "" ? undefined : Number(e.target.value))}
@@ -498,7 +570,7 @@ export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAn
           <label className="text-xs font-medium">Equation Size</label>
           <input 
             type="number" 
-            className="p-2 border rounded-md text-sm bg-background"
+            className="p-2 border rounded-md text-base bg-background"
             placeholder={String(config.fontSize)}
             value={config.equationFontSize ?? ""}
             onChange={(e) => handleChange("equationFontSize", e.target.value === "" ? undefined : Number(e.target.value))}
@@ -515,7 +587,7 @@ export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAn
           checked={config.showLegend}
           onChange={(e) => handleChange("showLegend", e.target.checked)}
         />
-        <label htmlFor="showLegend" className="text-sm font-medium">Show Color Legend Below Graph</label>
+        <label htmlFor="showLegend" className="text-base font-medium">Show Color Legend Below Graph</label>
       </div>
     </div>
   );

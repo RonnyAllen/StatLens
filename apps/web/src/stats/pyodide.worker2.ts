@@ -8,15 +8,19 @@ self.onmessage = async (event) => {
 
   if (type === "INIT") {
     try {
+      self.postMessage({ id, type: "progress", progress: 10, message: "Loading Pyodide runtime..." })
       pyodide = await loadPyodide({
         indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.1/full/",
       })
       
+      self.postMessage({ id, type: "progress", progress: 40, message: "Loading core mathematics (NumPy, SciPy)..." })
       await pyodide.loadPackage(["numpy", "pandas", "scipy", "scikit-learn", "statsmodels", "micropip"])
       
       // Install optional packages (best-effort — the engine's imports are defensive,
       // so a failed optional install can't break the whole engine load).
+      // Install optional packages
       try {
+        self.postMessage({ id, type: "progress", progress: 70, message: "Loading advanced statistics (Pingouin, Lifelines)..." })
         await pyodide.runPythonAsync(`
           import micropip
           await micropip.install(["pingouin==0.5.4", "scikit-posthocs==0.9.0", "lifelines==0.29.0"])
@@ -27,8 +31,10 @@ self.onmessage = async (event) => {
 
       // Pre-compile the engine once. If this fails, surface the REAL error instead of
       // letting it show up later as a misleading "analyze_sheet is not defined".
+      // Pre-compile the engine once
       const engineDef = engineSource.replace(/\n\s*run\(\)\s*$/, "\n");
       try {
+        self.postMessage({ id, type: "progress", progress: 95, message: "Initializing analysis engine..." })
         await pyodide.runPythonAsync(engineDef);
       } catch (e: any) {
         console.error("[StatLens] ENGINE FAILED TO LOAD — this is the real error:", e)

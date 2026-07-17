@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import {
   Dialog,
   DialogContent,
@@ -18,9 +18,12 @@ import { CheckCircle2 } from "lucide-react"
 
 export interface TestOptions {
   testId: string
-  postHocFamily: "all_pairwise" | "specific_pairs" | "none"
+  postHocFamily: "all_pairwise" | "specific_pairs" | "control_vs_others" | "none"
   postHocTest: string
   specificPairs: Array<[string, string]>
+  /** Column-group id of the control column. Only set when postHocFamily === "control_vs_others". */
+  controlGroup?: string
+  tails?: "two-sided" | "less" | "greater"
   transformOptions?: any
 }
 
@@ -34,8 +37,14 @@ interface TestOptionsDialogProps {
 }
 
 export function TestOptionsDialog({ open, onOpenChange, sheet, recommendedTestId, assumptions, onRunTest }: TestOptionsDialogProps) {
-  const [postHocFamily, setPostHocFamily] = useState<"all_pairwise" | "specific_pairs">("all_pairwise")
+  const [postHocFamily, setPostHocFamily] = useState<"all_pairwise" | "specific_pairs" | "control_vs_others">("all_pairwise")
+  const [controlGroup, setControlGroup] = useState<string>("")
   const [selectedPairs, setSelectedPairs] = useState<Array<[string, string]>>([])
+  const [methodOverride, setMethodOverride] = useState<string>("")
+
+  useEffect(() => {
+    setMethodOverride("")
+  }, [recommendedTestId])
 
   const [integrateBaseline, setIntegrateBaseline] = useState(0)
   const [differentiateOrder, setDifferentiateOrder] = useState(1)
@@ -44,7 +53,9 @@ export function TestOptionsDialog({ open, onOpenChange, sheet, recommendedTestId
   const [splineMethod, setSplineMethod] = useState<"interpolate" | "smooth">("interpolate")
   const [splineKnots, setSplineKnots] = useState(5)
   const [lowessFrac, setLowessFrac] = useState(0.25)
-
+  const [threeWayAnova, setThreeWayAnova] = useState(false)
+  const [sphericityCorrection, setSphericityCorrection] = useState<"none" | "GG" | "HF">("none")
+  const [tails, setTails] = useState<"two-sided" | "less" | "greater">("two-sided")
 
   const groups = sheet.columnGroups.map(g => g.id)
 
@@ -107,6 +118,11 @@ export function TestOptionsDialog({ open, onOpenChange, sheet, recommendedTestId
       if (n > maxN) maxN = n
     })
 
+    if (postHocFamily === "control_vs_others") {
+      // Equal variance -> true Dunnett. Unequal -> Dunnett's T3 restricted to the k-1
+      // control comparisons. (Non-parametric already returned "Dunn's test" above.)
+      return equalVar ? "Dunnett's multiple comparisons test" : "Dunnett's T3 test"
+    }
     if (postHocFamily === "all_pairwise") {
       if (equalVar) {
         return "Tukey's HSD"
@@ -114,9 +130,29 @@ export function TestOptionsDialog({ open, onOpenChange, sheet, recommendedTestId
         return maxN < 50 ? "Dunnett's T3 test" : "Games-Howell test"
       }
     } else {
-      return equalVar ? "Pairwise t-tests with Holm correction" : "Pairwise Welch t-tests with Holm correction"
+      return "Pairwise t-tests with Holm correction"
     }
   }, [isPostHocNeeded, recommendedTestId, assumptions, postHocFamily, validGroups, sheet.data])
+
+  const allowedMethods = useMemo(() => {
+    const test = recommendedTestId
+    const fam = postHocFamily
+    if (test === "Ordinary One-way ANOVA") {
+      if (fam === "all_pairwise") return ["Tukey's HSD", "Bonferroni", "Šídák", "Holm-Šídák"]
+      if (fam === "specific_pairs") return ["Pairwise t-tests with Holm correction", "Bonferroni", "Šídák", "Holm-Šídák"]
+      if (fam === "control_vs_others") return ["Dunnett's multiple comparisons test"]
+    } else if (test === "Welch's ANOVA" || test === "Brown-Forsythe ANOVA") {
+      if (fam === "all_pairwise") return ["Dunnett's T3 test", "Games-Howell test"]
+      if (fam === "control_vs_others") return ["Dunnett's T3 test"]
+    } else if (test.includes("Kruskal-Wallis") || test.includes("Friedman")) {
+      return ["Dunn's test"]
+    } else if (test.includes("Survival")) {
+      return ["Pairwise Logrank with Holm correction"]
+    }
+    return []
+  }, [recommendedTestId, postHocFamily])
+
+  const effectivePostHoc = methodOverride || recommendedPostHoc
 
   const togglePair = (pair: [string, string]) => {
     setSelectedPairs(prev => {
@@ -133,8 +169,9 @@ export function TestOptionsDialog({ open, onOpenChange, sheet, recommendedTestId
     onRunTest({
       testId: recommendedTestId,
       postHocFamily: isPostHocNeeded ? postHocFamily : "none",
-      postHocTest: isPostHocNeeded ? recommendedPostHoc : "None",
+      postHocTest: isPostHocNeeded ? effectivePostHoc : "None",
       specificPairs: postHocFamily === "specific_pairs" ? selectedPairs : [],
+      controlGroup: postHocFamily === "control_vs_others" ? (controlGroup || validGroups[0] || "") : undefined,
       transformOptions: {
         integrateBaseline,
         differentiateOrder,
@@ -142,17 +179,23 @@ export function TestOptionsDialog({ open, onOpenChange, sheet, recommendedTestId
         smoothPoly,
         splineMethod,
         splineKnots,
-        lowessFrac
-      }
+        lowessFrac,
+        anovaCorrection: sphericityCorrection
+      },
+      tails
     })
     onOpenChange(false)
   }
 
+  const effectiveTestId = (sheet.type === "Grouped" && threeWayAnova) ? "Three-way ANOVA" : recommendedTestId;
+  const displayTestId = effectiveTestId === "Unpaired t test" ? "Unpaired t test (Student's)" : effectiveTestId;
+  const hasTails = ["Unpaired t test", "Welch's t test", "Paired t test", "One-sample t test", "Mann-Whitney U test", "Wilcoxon signed-rank test"].includes(effectiveTestId);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[700px]">
         <DialogHeader>
-          <DialogTitle>Test Options: {recommendedTestId}</DialogTitle>
+          <DialogTitle>Test Options: {displayTestId}</DialogTitle>
           <DialogDescription>
             Configure options for the statistical test before execution.
           </DialogDescription>
@@ -160,20 +203,71 @@ export function TestOptionsDialog({ open, onOpenChange, sheet, recommendedTestId
 
         <div className="py-4 space-y-6">
           {sheet.type === "Grouped" && (
-            <div className="bg-blue-50/50 p-4 rounded-lg flex gap-3 text-blue-900 border border-blue-200">
+            <div className="bg-blue-50/50 p-4 rounded-lg flex flex-col gap-3 text-blue-900 border border-blue-200">
               <div className="space-y-1">
-                <h4 className="text-sm font-semibold">Looking for Three-way ANOVA?</h4>
-                <p className="text-xs leading-snug opacity-90">
-                  To perform a Three-way ANOVA, please use the <strong>MultipleVariables</strong> layout, which supports a dependent variable alongside three distinct categorical factor columns.
+                <h4 className="text-lg font-semibold">Multiple Variables Layout</h4>
+                <p className="text-base leading-snug opacity-90">
+                  By default, Grouped tables run a Two-way ANOVA. If your data contains 3 nested factors (e.g., Rows, Columns, and Sub-columns as a third factor), you can explicitly run a Three-way ANOVA.
+                </p>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="threeWayAnova" checked={threeWayAnova} onCheckedChange={(v) => setThreeWayAnova(!!v)} />
+                <Label htmlFor="threeWayAnova" className="font-medium text-lg">Run as Three-way ANOVA</Label>
+              </div>
+            </div>
+          )}
+
+          {(effectiveTestId.includes("Repeated Measures") || effectiveTestId.includes("RM ANOVA") || effectiveTestId === "Mixed-effects ANOVA") && (
+            <div className="space-y-4">
+              <h4 className="text-lg font-medium">Repeated Measures Options</h4>
+              <div className="space-y-2">
+                <Label>Sphericity Correction</Label>
+                <select 
+                  className="w-full p-2 border rounded-md text-lg bg-background"
+                  value={sphericityCorrection}
+                  onChange={e => setSphericityCorrection(e.target.value as "none" | "GG" | "HF")}
+                >
+                  <option value="none">None (Assume Sphericity)</option>
+                  <option value="GG">Greenhouse-Geisser</option>
+                  <option value="HF">Huynh-Feldt</option>
+                </select>
+                <p className="text-base text-muted-foreground mt-1">
+                  Adjusts degrees of freedom if the sphericity assumption is violated.
                 </p>
               </div>
             </div>
           )}
-          
+
+          {hasTails && (
+            <div className="space-y-4">
+              <h4 className="text-lg font-medium">Tails</h4>
+              <RadioGroup value={tails} onValueChange={(v: any) => setTails(v)} className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="two-sided" id="two-sided" />
+                  <Label htmlFor="two-sided">Two-tailed</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="less" id="less" />
+                  <Label htmlFor="less">
+                    One-tailed <span className="text-muted-foreground font-normal">(Predicted: Group 1 &lt; Group 2)</span>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="greater" id="greater" />
+                  <Label htmlFor="greater">
+                    One-tailed <span className="text-muted-foreground font-normal">(Predicted: Group 1 &gt; Group 2)</span>
+                  </Label>
+                </div>
+              </RadioGroup>
+              <p className="text-base text-muted-foreground mt-2">
+                Note: A one-tailed test requires you to predict the direction of the effect before seeing the data.
+              </p>
+            </div>
+          )}
           
           {recommendedTestId === "Integrate" && (
             <div className="space-y-4">
-              <h4 className="text-sm font-medium">Integration Options</h4>
+              <h4 className="text-lg font-medium">Integration Options</h4>
               <div className="space-y-2">
                 <Label>Baseline Value (Y=0 equivalent)</Label>
                 <Input type="number" value={integrateBaseline} onChange={e => setIntegrateBaseline(Number(e.target.value))} />
@@ -183,7 +277,7 @@ export function TestOptionsDialog({ open, onOpenChange, sheet, recommendedTestId
 
           {recommendedTestId === "Differentiate" && (
             <div className="space-y-4">
-              <h4 className="text-sm font-medium">Differentiation Options</h4>
+              <h4 className="text-lg font-medium">Differentiation Options</h4>
               <div className="space-y-2">
                 <Label>Derivative Order</Label>
                 <RadioGroup value={differentiateOrder.toString()} onValueChange={v => setDifferentiateOrder(Number(v))} className="mt-2 space-y-2">
@@ -202,7 +296,7 @@ export function TestOptionsDialog({ open, onOpenChange, sheet, recommendedTestId
 
           {recommendedTestId === "Smooth" && (
             <div className="space-y-4">
-              <h4 className="text-sm font-medium">Savitzky-Golay Smoothing Options</h4>
+              <h4 className="text-lg font-medium">Savitzky-Golay Smoothing Options</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Number of Neighbors (Window)</Label>
@@ -218,7 +312,7 @@ export function TestOptionsDialog({ open, onOpenChange, sheet, recommendedTestId
 
           {recommendedTestId === "Fit Spline" && (
             <div className="space-y-4">
-              <h4 className="text-sm font-medium">Spline Options</h4>
+              <h4 className="text-lg font-medium">Spline Options</h4>
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label>Method</Label>
@@ -245,7 +339,7 @@ export function TestOptionsDialog({ open, onOpenChange, sheet, recommendedTestId
 
           {recommendedTestId === "LOWESS" && (
             <div className="space-y-4">
-              <h4 className="text-sm font-medium">LOWESS Options</h4>
+              <h4 className="text-lg font-medium">LOWESS Options</h4>
               <div className="space-y-2">
                 <Label>Smoothing Window Fraction (0 to 1)</Label>
                 <Input type="number" step="0.05" min={0.01} max={1} value={lowessFrac} onChange={e => setLowessFrac(Number(e.target.value))} />
@@ -256,13 +350,13 @@ export function TestOptionsDialog({ open, onOpenChange, sheet, recommendedTestId
           {isPostHocNeeded && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <h4 className="text-sm font-medium">Multiple Comparisons (Post-Hoc)</h4>
-                <p className="text-sm text-muted-foreground">
+                <h4 className="text-lg font-medium">Multiple Comparisons (Post-Hoc)</h4>
+                <p className="text-lg text-muted-foreground">
                   Since you have more than 2 groups, if the overall test is significant, which groups do you want to compare?
                 </p>
                 <RadioGroup 
                   value={postHocFamily} 
-                  onValueChange={(val: any) => setPostHocFamily(val)}
+                  onValueChange={(val: any) => { setPostHocFamily(val); setMethodOverride(""); }}
                   className="mt-2 space-y-2"
                 >
                   <div className="flex items-center space-x-2">
@@ -271,7 +365,7 @@ export function TestOptionsDialog({ open, onOpenChange, sheet, recommendedTestId
                       Compare every group with every other group
                     </Label>
                   </div>
-                  {recommendedTestId !== "Three-way ANOVA" && (
+                  {effectiveTestId !== "Three-way ANOVA" && effectiveTestId !== "Welch's ANOVA" && effectiveTestId !== "Brown-Forsythe ANOVA" && (
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="specific_pairs" id="specific_pairs" />
                       <Label htmlFor="specific_pairs" className="font-normal">
@@ -279,12 +373,44 @@ export function TestOptionsDialog({ open, onOpenChange, sheet, recommendedTestId
                       </Label>
                     </div>
                   )}
+                  {/* Compare-to-control is only offered for Column tables, because that is the
+                      only table type where the engine implements it. Offering it elsewhere would
+                      silently return all-pairwise results instead. */}
+                  {sheet.type === "Column" && effectiveTestId !== "Three-way ANOVA" && (
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="control_vs_others" id="control_vs_others" />
+                      <Label htmlFor="control_vs_others" className="font-normal">
+                        Compare each group to a control group
+                      </Label>
+                    </div>
+                  )}
                 </RadioGroup>
               </div>
 
-              {postHocFamily === "specific_pairs" && recommendedTestId !== "Three-way ANOVA" && (
+              {postHocFamily === "control_vs_others" && sheet.type === "Column" && (
                 <div className="pl-6 border-l-2 ml-2 space-y-3">
-                  <h5 className="text-sm font-medium">Select Pairs to Compare</h5>
+                  <h5 className="text-lg font-medium">Select the Control Group</h5>
+                  <RadioGroup
+                    value={controlGroup || validGroups[0] || ""}
+                    onValueChange={(v: any) => setControlGroup(v)}
+                    className="space-y-2"
+                  >
+                    {validGroups.map(gId => {
+                      const gName = sheet.columnGroups.find(g => g.id === gId)?.name || gId
+                      return (
+                        <div key={gId} className="flex items-center space-x-2">
+                          <RadioGroupItem value={gId} id={`ctrl-${gId}`} />
+                          <Label htmlFor={`ctrl-${gId}`} className="font-normal">{gName}</Label>
+                        </div>
+                      )
+                    })}
+                  </RadioGroup>
+                </div>
+              )}
+
+              {postHocFamily === "specific_pairs" && effectiveTestId !== "Three-way ANOVA" && (
+                <div className="pl-6 border-l-2 ml-2 space-y-3">
+                  <h5 className="text-lg font-medium">Select Pairs to Compare</h5>
                   <ScrollArea className="h-[120px] rounded-md border p-2">
                     <div className="space-y-2">
                       {allPossiblePairs.map((pair) => {
@@ -298,7 +424,7 @@ export function TestOptionsDialog({ open, onOpenChange, sheet, recommendedTestId
                               checked={isChecked}
                               onCheckedChange={() => togglePair(pair)}
                             />
-                            <Label htmlFor={`pair-${pair[0]}-${pair[1]}`} className="text-sm font-normal">
+                            <Label htmlFor={`pair-${pair[0]}-${pair[1]}`} className="text-lg font-normal">
                               {group1Name} vs {group2Name}
                             </Label>
                           </div>
@@ -309,13 +435,35 @@ export function TestOptionsDialog({ open, onOpenChange, sheet, recommendedTestId
                 </div>
               )}
 
-              <div className="bg-muted/50 p-4 rounded-lg flex gap-3">
-                <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-                <div className="space-y-1">
-                  <h4 className="text-sm font-semibold">Recommended Post-Hoc: {recommendedPostHoc}</h4>
-                  <p className="text-xs text-muted-foreground leading-snug">
-                    Based on your data's variance and normality, StatLens automatically selects the most robust post-hoc correction method for your chosen comparisons.
-                  </p>
+              <div className="bg-muted/50 p-4 rounded-lg flex flex-col gap-3">
+                <div className="flex gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                  <div className="space-y-1">
+                    <h4 className="text-lg font-semibold">Recommended Post-Hoc: {recommendedPostHoc}</h4>
+                    <p className="text-base text-muted-foreground leading-snug">
+                      Based on your data's variance and normality, StatLens automatically selects the most robust post-hoc correction method for your chosen comparisons.
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="pl-8 pt-2">
+                  <Label className="text-base font-semibold mb-2 block">Method (advanced)</Label>
+                  <select 
+                    className="w-full text-lg border rounded p-1.5 bg-background disabled:opacity-50"
+                    value={effectivePostHoc}
+                    onChange={e => setMethodOverride(e.target.value)}
+                    disabled={allowedMethods.length <= 1}
+                  >
+                    {allowedMethods.length > 0 ? (
+                      allowedMethods.map(m => (
+                        <option key={m} value={m}>
+                          {m} {m === recommendedPostHoc ? "(recommended)" : ""}
+                        </option>
+                      ))
+                    ) : (
+                      <option value={recommendedPostHoc}>{recommendedPostHoc} (recommended)</option>
+                    )}
+                  </select>
                 </div>
               </div>
             </div>
@@ -324,7 +472,7 @@ export function TestOptionsDialog({ open, onOpenChange, sheet, recommendedTestId
           {!isPostHocNeeded && (
             <div className="bg-muted/50 p-4 rounded-lg flex items-center gap-3">
               <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
-              <p className="text-sm">
+              <p className="text-lg">
                 This test does not require multiple comparisons setup. It will run directly.
               </p>
             </div>

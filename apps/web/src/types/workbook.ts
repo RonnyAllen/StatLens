@@ -104,7 +104,17 @@ export type Analysis = z.infer<typeof AnalysisSchema>
 export const GraphConfigSchema = z.object({
   notched: z.boolean().optional(),
   errorBarType: z.enum(["mean_sem", "mean_sd", "mean_95ci"]).default("mean_sem"),
-  errorBars: z.boolean().optional(),
+  errorBars: z.preprocess(
+    (val) => {
+      if (val === true) return "ci95"
+      if (val === false) return "none"
+      return val
+    },
+    z.enum(["none", "se", "ci95"]).default("none")
+  ),
+  survivalShowAs: z.enum(["fractions", "percents"]).default("fractions"),
+  survivalSymbolsAt: z.enum(["all", "censored"]).default("censored"),
+  survivalStyle: z.enum(["staircase-ticks", "staircase", "connected-dots", "dots-only"]).default("staircase-ticks"),
   whiskerMode: z.enum(["min_max", "tukey"]).default("min_max"),
   showPoints: z.boolean().default(true),
   jitterSeed: z.number().default(42),
@@ -114,7 +124,11 @@ export const GraphConfigSchema = z.object({
   referenceValue: z.number().optional(),
   ciSource: z.enum(["group_means", "coefficients"]).optional(),
   axisMode: z.enum(["auto", "manual"]).default("auto"),
-  palette: z.enum(["okabe-ito", "viridis", "tableau"]).default("okabe-ito"),
+  palette: z.enum([
+    "okabe-ito", "viridis", "tableau", "brewer-bold", "forest-dusk", "duo-tone",
+    "nature", "lancet", "jama", "grayscale", "magma", "cividis",
+    "ocean", "pastel", "neon", "earth", "retro"
+  ]).default("okabe-ito"),
   background: z.enum(["transparent", "white"]).default("transparent"),
   significanceScale: z.enum(["standard", "raw"]).default("standard"),
   showNsBrackets: z.boolean().default(true),
@@ -137,6 +151,7 @@ export const GraphConfigSchema = z.object({
   legendFontSize: z.number().optional(),
   equationFontSize: z.number().optional(),
   showLegend: z.boolean().default(false),
+  showPostHocCaption: z.boolean().default(true),
   pointSize: z.number().default(3),
   lineStyle: z.enum(["none", "straight", "smooth"]).optional(),
   trendlineType: z.enum(["none", "linear", "linear_forecast", "exponential"]).optional()

@@ -39,6 +39,33 @@ export function GraphEngine({ graph, sheet, analysisResults }: GraphEngineProps)
     });
   };
 
+  const getCaptionText = () => {
+    if (!analysisResults || !analysisResults.test_id) return null;
+    const testId = analysisResults.test_id;
+    let caption = `${testId}`;
+    if (analysisResults.overall_p !== undefined) {
+      caption += `: p=${Number(analysisResults.overall_p).toPrecision(3)}`;
+    }
+    
+    if (analysisResults.post_hocs && analysisResults.post_hocs.method && analysisResults.post_hocs.method !== "None") {
+      let method = analysisResults.post_hocs.method;
+      if (method.includes("Dunnett") && analysisResults.post_hocs.control_group) {
+        method += ` vs ${analysisResults.post_hocs.control_group}`;
+      }
+      caption += `. Post-hoc (${method}): `;
+      
+      const sigComps = (analysisResults.post_hocs.comparisons || []).filter((c: any) => c.p_value < 0.05);
+      if (sigComps.length === 0) {
+        caption += "No significant pairwise differences.";
+      } else {
+        caption += sigComps.map((c: any) => `${c.group1} vs ${c.group2} p=${Number(c.p_value).toPrecision(3)}`).join(", ");
+      }
+    }
+    return caption;
+  };
+
+  const captionText = getCaptionText();
+
   return (
     <div className="relative border rounded-md p-4 bg-background shadow-sm flex flex-col h-full w-full" ref={containerRef}>
       <div className="flex justify-between items-center mb-4 flex-shrink-0 gap-2">
@@ -142,6 +169,18 @@ export function GraphEngine({ graph, sheet, analysisResults }: GraphEngineProps)
               {graph.chartType !== "bar-error" && graph.chartType !== "box" && graph.chartType !== "violin" && graph.chartType !== "raincloud" && graph.chartType !== "scatter" && graph.chartType !== "strip" && graph.chartType !== "jitter" && graph.chartType !== "swarm" && graph.chartType !== "h-box" && graph.chartType !== "range-dumbbell" && graph.chartType !== "ci-forest" && graph.chartType !== "km-step" && (
                 <text x={width/2} y={height/2} textAnchor="middle" fill="#666">
                   {graph.chartType} not implemented yet
+                </text>
+              )}
+              {captionText && (graph.config.showPostHocCaption ?? true) && (
+                <text 
+                  x={10} 
+                  y={height - 10} 
+                  fontSize={12} 
+                  fontFamily={graph.config.fontFamily} 
+                  fill={graph.config.theme === 'dark' || (graph.config.theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches) ? "#aaa" : "#555"}
+                  textAnchor="start"
+                >
+                  {captionText}
                 </text>
               )}
             </svg>

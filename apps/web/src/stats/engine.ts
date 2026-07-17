@@ -17,27 +17,32 @@ class StatsEngine {
     return `msg-${this.messageIdCounter}-${Date.now()}`;
   }
 
-  init(): Promise<void> {
+  init(onProgress?: (p: number, m: string) => void): Promise<void> {
     return new Promise((resolve, reject) => {
       // Using vite's ?worker
       this.worker = new Worker(new URL("./pyodide.worker2.ts", import.meta.url), { type: "module" })
 
       const id = this.generateId()
-      this.resolvers.set(id, { resolve, reject })
-
-      this.worker.onmessage = (e: MessageEvent<WorkerResponse>) => {
-        const { id, type, result, error } = e.data
-        const promiseHandlers = this.resolvers.get(id)
-        
-        if (promiseHandlers) {
-          if (type === "INIT_SUCCESS" || type === "SUCCESS") {
-            promiseHandlers.resolve(result)
-          } else if (type === "ERROR") {
-            promiseHandlers.reject(new Error(error))
+      
+      const handler = (e: MessageEvent<WorkerResponse>) => {
+        const { id: msgId, type, result, error, progress, message } = e.data
+        if (msgId === id) {
+          if (type === "progress") {
+            if (onProgress) onProgress(progress || 0, message || "")
+            return
           }
+          this.worker!.removeEventListener("message", handler)
           this.resolvers.delete(id)
+          if (type === "INIT_SUCCESS" || type === "SUCCESS") {
+            resolve(result)
+          } else if (type === "ERROR") {
+            reject(new Error(error))
+          }
         }
       }
+
+      this.worker.addEventListener("message", handler)
+      this.resolvers.set(id, { resolve, reject })
 
       this.worker.postMessage({ id, type: "INIT" })
     })

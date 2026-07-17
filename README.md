@@ -57,7 +57,7 @@ Eight typed table types, each of which determines which analyses are offered:
 | **Multiple Variables** | Multiple regression, PCA, correlation matrices |
 | **Nested** | Nested t-test / nested ANOVA |
 
-Sub-column formats include replicates, mean ± SD (n), and mean ± SEM (n).
+Sub-column formats include replicates, mean ± SD (n), and mean ± SEM (n). The grid features a custom multi-cell selection engine, infinite undo/redo, and seamless copy-paste directly from Excel or Prism.
 
 ### Analyses
 
@@ -78,7 +78,7 @@ Two-way ANOVA (incl. Type III unbalanced) · Repeated-measures two-way ANOVA · 
 <details>
 <summary><b>Post hoc tests</b></summary>
 
-Tukey HSD · Dunnett's T3 · Šidák / Bonferroni corrections · control-vs-others and specific-pairs comparison schemes. The selection logic is documented in [`docs/Choosing Post Hoc Tests.md`](docs/).
+Tukey HSD · Dunnett's multiple comparisons test · Dunnett's T3 · Games-Howell · Šidák / Bonferroni corrections · control-vs-others and specific-pairs comparison schemes. The selection logic is documented in [`docs/Choosing Post Hoc Tests.md`](docs/).
 </details>
 
 <details>
@@ -96,7 +96,7 @@ Chi-square (± Yates' correction) · Fisher's exact · McNemar's · Binomial · 
 <details>
 <summary><b>Survival</b></summary>
 
-Kaplan-Meier · Log-rank (Mantel-Cox) · Gehan-Breslow-Wilcoxon · Hazard ratios · Pairwise log-rank with Bonferroni/Šidák
+Kaplan-Meier (with median survival & CI) · Log-rank (Mantel-Cox) · Gehan-Breslow-Wilcoxon · Hazard ratios · Pairwise log-rank with Bonferroni/Šidák
 </details>
 
 <details>
@@ -105,20 +105,20 @@ Kaplan-Meier · Log-rank (Mantel-Cox) · Gehan-Breslow-Wilcoxon · Hazard ratios
 Principal component analysis (PCA) · Correlation matrices · Pearson & Spearman correlation (with exact p-values for small n)
 </details>
 
-Analyses report effect sizes (Cohen's d, eta², mean differences), confidence intervals, and degrees of freedom, alongside a Markdown results report.
+Analyses report effect sizes (Cohen's d, eta², mean differences), confidence intervals, and degrees of freedom, alongside a Markdown results report. Tests allow precise configuration including one-tailed/two-tailed options, interaction terms, and sphericity corrections (Greenhouse-Geisser, Huynh-Feldt).
 
 ### Graphs
 
-- Column/bar, XY, survival, and horizontal category charts
+- Column/bar, XY, survival (step curves with censor ticks), and horizontal category charts
 - Scatter overlays: **beeswarm**, **jitter**, **violin** (KDE), **box-and-whisker**
 - Error bars (SD / SEM / CI), regression overlays with confidence bands
 - **Significance brackets** computed and laid out automatically
-- Light/dark theme, 15 bundled font families
+- **AMOLED Dark Mode** with auto-inverting chart colours, 15 bundled font families, and **12 chart colour palettes** (including colourblind-safe and journal styles)
 - Export to **PNG** and **SVG**
 
-### Assumption checking
+### Assumption checking & Recommender
 
-Normality, equal-variance, and outlier diagnostics run alongside analyses, with plain-language verdicts ("The data appears to be normally distributed").
+Normality, equal-variance, and outlier diagnostics run alongside analyses, with plain-language verdicts ("The data appears to be normally distributed"). A built-in decision tree recommends the most appropriate statistical test based on your data's characteristics.
 
 ---
 

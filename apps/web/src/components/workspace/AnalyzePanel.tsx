@@ -93,7 +93,7 @@ export function AnalyzePanel({ sheet, onTestComplete, isActive = true }: Analyze
       <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-12">
         <Loader2 className="h-8 w-8 animate-spin mb-4" />
         <p>Running statistical analysis engine...</p>
-        <p className="text-sm opacity-70">Calculating descriptives and checking assumptions.</p>
+        <p className="text-base opacity-70">Calculating descriptives and checking assumptions.</p>
       </div>
     )
   }
@@ -118,9 +118,9 @@ export function AnalyzePanel({ sheet, onTestComplete, isActive = true }: Analyze
   return (
     <>
       <ScrollArea className="flex-1">
-        <div className="p-6 space-y-6 max-w-5xl mx-auto">
-          <div className="flex items-center gap-3 border-b pb-4">
-            <Activity className="h-6 w-6 text-primary" />
+        <div className="p-4 space-y-4 max-w-5xl mx-auto">
+          <div className="flex items-center gap-3 border-b pb-3">
+            <Activity className="h-5 w-5 text-primary" />
             <h2 className="text-2xl font-bold tracking-tight">Analysis: {sheet.name}</h2>
           </div>
 
@@ -128,7 +128,7 @@ export function AnalyzePanel({ sheet, onTestComplete, isActive = true }: Analyze
           {recommendation && recommendation.testId !== "None" && (
             <Card className="shadow-sm">
               <CardHeader className="pb-4">
-                <CardTitle className="text-lg flex items-center justify-between">
+                <CardTitle className="text-xl flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     Select a Statistical Test
                   </div>
@@ -136,7 +136,7 @@ export function AnalyzePanel({ sheet, onTestComplete, isActive = true }: Analyze
                     Configure & Run
                   </Button>
                 </CardTitle>
-                <CardDescription className="text-sm">
+                <CardDescription className="text-base">
                   StatLens has automatically diagnosed your data and recommended the most mathematically robust test below.
                 </CardDescription>
               </CardHeader>
@@ -150,25 +150,25 @@ export function AnalyzePanel({ sheet, onTestComplete, isActive = true }: Analyze
                     <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
                     <RadioGroupItem value={recommendation.testId} id={`test-${recommendation.testId}`} className="mt-1" />
                     <div className="flex-1 space-y-1">
-                      <Label htmlFor={`test-${recommendation.testId}`} className="text-base font-semibold flex items-center gap-2 cursor-pointer">
+                      <Label htmlFor={`test-${recommendation.testId}`} className="text-lg font-semibold flex items-center gap-2 cursor-pointer">
                         {recommendation.testId}
                         <span className="inline-flex items-center rounded-full bg-primary/20 px-2 py-0.5 text-xs font-medium text-primary ring-1 ring-inset ring-primary/30 shadow-[0_0_8px_rgba(var(--primary),0.3)]">
                           Recommended
                         </span>
                       </Label>
-                      <p className="text-sm text-muted-foreground">{recommendation.rationale}</p>
+                      <p className="text-base text-muted-foreground">{recommendation.rationale}</p>
                     </div>
                   </div>
 
                   {recommendation.alternatives && recommendation.alternatives.length > 0 && (
                     <div className="mt-4 pt-4 border-t space-y-3">
-                      <h4 className="text-sm font-medium text-muted-foreground mb-3">Alternative Tests</h4>
+                      <h4 className="text-base font-medium text-muted-foreground mb-3">Alternative Tests</h4>
                       {recommendation.alternatives.map((alt: string) => {
                         const isDisabled = alt.includes("(Not implemented yet)");
                         return (
                           <div key={alt} className={`flex items-center space-x-3 p-2 rounded-md transition-colors ${isDisabled ? 'opacity-50' : 'hover:bg-muted/50'}`}>
                             <RadioGroupItem value={alt} id={`test-${alt}`} disabled={isDisabled} />
-                            <Label htmlFor={`test-${alt}`} className={`text-sm font-medium flex-1 ${isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+                            <Label htmlFor={`test-${alt}`} className={`text-base font-medium flex-1 ${isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
                               {alt}
                             </Label>
                           </div>
@@ -185,7 +185,7 @@ export function AnalyzePanel({ sheet, onTestComplete, isActive = true }: Analyze
           {assumptions && Object.keys(assumptions).length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Assumption Checks</CardTitle>
+                <CardTitle className="text-xl">Assumption Checks</CardTitle>
               </CardHeader>
               <CardContent className="grid gap-4 md:grid-cols-2">
                 {assumptions.normality && (
@@ -196,8 +196,8 @@ export function AnalyzePanel({ sheet, onTestComplete, isActive = true }: Analyze
                       <XCircle className="h-5 w-5 text-destructive mt-0.5" />
                     )}
                     <div>
-                      <h4 className="font-semibold text-sm">Normality (Shapiro-Wilk)</h4>
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <h4 className="font-semibold text-base">Normality (Shapiro-Wilk)</h4>
+                      <p className="text-base text-muted-foreground mt-1">
                         {assumptions.normality.passed 
                           ? "The data appears to be normally distributed." 
                           : "One or more groups failed the normality test (p < 0.05)."}
@@ -213,8 +213,8 @@ export function AnalyzePanel({ sheet, onTestComplete, isActive = true }: Analyze
                       <XCircle className="h-5 w-5 text-destructive mt-0.5" />
                     )}
                     <div>
-                      <h4 className="font-semibold text-sm">Equal Variances (Levene's)</h4>
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <h4 className="font-semibold text-base">Equal Variances (Levene's)</h4>
+                      <p className="text-base text-muted-foreground mt-1">
                         {assumptions.variance.passed 
                           ? "The groups have roughly equal variances." 
                           : "The groups have significantly different variances (p < 0.05)."}
@@ -230,8 +230,8 @@ export function AnalyzePanel({ sheet, onTestComplete, isActive = true }: Analyze
                       <XCircle className="h-5 w-5 text-destructive mt-0.5" />
                     )}
                     <div>
-                      <h4 className="font-semibold text-sm">Outliers (Tukey's Fences)</h4>
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <h4 className="font-semibold text-base">Outliers (Tukey's Fences)</h4>
+                      <p className="text-base text-muted-foreground mt-1">
                         {assumptions.outliers.passed 
                           ? "No extreme outliers were detected." 
                           : "Some groups contain extreme outliers that may skew results."}
@@ -246,14 +246,14 @@ export function AnalyzePanel({ sheet, onTestComplete, isActive = true }: Analyze
           {/* Descriptives Table */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Descriptive Statistics</CardTitle>
+              <CardTitle className="text-xl">Descriptive Statistics</CardTitle>
             </CardHeader>
             <CardContent>
               {Object.keys(descriptives).length === 0 ? (
-                <p className="text-sm text-muted-foreground">Not enough data to calculate descriptives.</p>
+                <p className="text-base text-muted-foreground">Not enough data to calculate descriptives.</p>
               ) : (
                 <div className="rounded-md border overflow-x-auto">
-                  <table className="w-full text-sm text-left">
+                  <table className="w-full text-base text-left">
                     <thead className="bg-muted/50 text-muted-foreground">
                       <tr>
                         <th className="px-4 py-2 font-medium">Group</th>

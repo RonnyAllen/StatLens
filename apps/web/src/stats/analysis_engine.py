@@ -59,7 +59,31 @@ def _patched_sr_sf(q, k, df):
     return res
 
 def _patched_sr_ppf(p, k, df):
-    return 0.0
+    """Critical value q for the studentized range.
+
+    scipy's native ppf relies on numerical integration that is unreliable in the
+    Pyodide/WASM build, so we invert the (accurate) patched sf by root-finding.
+    Verified exact to 5 decimals against scipy's CPython ppf.
+    """
+    from scipy.optimize import brentq
+    try:
+        p = float(p)
+        if not (0.0 < p < 1.0) or k < 2 or df < 1:
+            return float("nan")
+        target = 1.0 - p
+        f = lambda q: _patched_sr_sf_scalar(q, k, df) - target
+        lo, hi = 1e-6, 100.0
+        if f(lo) < 0.0:
+            return float(lo)
+        if f(hi) > 0.0:
+            return float(hi)
+        return float(brentq(f, lo, hi, xtol=1e-8))
+    except Exception:
+        try:
+            from statsmodels.stats.libqsturng import qsturng
+            return float(np.ravel(qsturng(p, k, df))[0])
+        except Exception:
+            return float("nan")
 
 scipy.stats.studentized_range.sf = _patched_sr_sf
 scipy.stats.studentized_range.ppf = _patched_sr_ppf
@@ -179,19 +203,27 @@ def brown_forsythe_anova_py(df, dv, between):
     
     return F_star, df1, df2, p_val
 
-def dunnetts_t3_pvalue(t_stat, k, df):
-    # Tamhane's T3 uses the Studentized Maximum Modulus over C = k(k-1)/2
-    # comparisons (NOT the studentized range / Tukey).
-    C = k * (k - 1) / 2.0
+# scipy.stats.dunnett integrates the multivariate t by quasi-Monte-Carlo and is NOT
+# deterministic without a seed. Verified in Pyodide/WASM: five identical calls returned
+# p from 2.1e-05 to 7.0e-05. Prism is deterministic, so we pin the stream.
+DUNNETT_SEED = 20260717
+
+
+def dunnetts_t3_pvalue(t_stat, k, df, n_comparisons=None):
+    # Tamhane's T3 uses the Studentized Maximum Modulus over C comparisons.
+    # All-pairs -> C = k(k-1)/2. Compare-to-control -> C = k-1 (pass n_comparisons).
+    C = float(n_comparisons) if n_comparisons else k * (k - 1) / 2.0
     t_abs = abs(t_stat)
     p = 1.0 - (2.0 * t.cdf(t_abs, df) - 1.0) ** C
     return float(min(max(p, 0.0), 1.0))
 
 
-def _mwu_exact_p(a, b, max_n=16):
-    """Exact two-sided Mann-Whitney P accounting for ties (matches GraphPad Prism),
-    by enumerating all C(n1+n2, n1) group assignments of the combined mid-ranks.
-    Returns None when total n exceeds max_n, so the caller keeps the asymptotic P."""
+def _mwu_exact_p(a, b, max_n=16, alternative="two-sided"):
+    """Exact Mann-Whitney P accounting for ties (matches GraphPad Prism), by enumerating
+    all C(n1+n2, n1) group assignments of the combined mid-ranks.
+    `alternative` is 'two-sided' | 'less' | 'greater' and follows scipy's convention
+    (direction refers to the FIRST sample). Returns None when total n exceeds max_n,
+    so the caller keeps the asymptotic P."""
     a = np.asarray(a, float); b = np.asarray(b, float)
     n1, n2 = len(a), len(b)
     if n1 == 0 or n2 == 0 or (n1 + n2) > max_n:
@@ -203,10 +235,19 @@ def _mwu_exact_p(a, b, max_n=16):
     count = 0; total = 0
     for comb in combinations(range(N), n1):
         U1 = ranks[list(comb)].sum() - n1 * (n1 + 1) / 2.0
-        U = min(U1, n1 * n2 - U1)
         total += 1
-        if U <= U_obs + 1e-9:
-            count += 1
+        if alternative == "less":
+            # P(U1 <= U1_obs): the first sample tends to be SMALLER.
+            if U1 <= U1_obs + 1e-9:
+                count += 1
+        elif alternative == "greater":
+            # P(U1 >= U1_obs): the first sample tends to be LARGER.
+            if U1 >= U1_obs - 1e-9:
+                count += 1
+        else:
+            U = min(U1, n1 * n2 - U1)
+            if U <= U_obs + 1e-9:
+                count += 1
     return count / total if total else None
 
 
@@ -239,6 +280,12 @@ def run():
     post_hoc_family = options.get('postHocFamily', 'none')
     post_hoc_test = options.get('postHocTest', 'none')
     specific_pairs = options.get('specificPairs', [])
+    # Tails. Prism always asks; the UI sends 'two-sided' | 'less' | 'greater'
+    # (direction refers to the FIRST/left group, matching scipy's convention).
+    tails = options.get('tails', 'two-sided')
+    if tails not in ('two-sided', 'less', 'greater'):
+        tails = 'two-sided'
+    _tail_label = {'two-sided': 'two-tailed', 'less': 'one-tailed', 'greater': 'one-tailed'}[tails]
     
     table_type = sheet.get("type", "Column")
     
@@ -324,6 +371,17 @@ def run():
                 df_long['Group'] = df_long['Group'].apply(lambda x: x.rsplit('_', 1)[0])
                 group_names = list(df_long['Group'].unique())
                 groups = [df_long[df_long['Group'] == g]['Value'].values for g in group_names]
+                # group_names now holds BASE ids (e.g. "c0"), but df still holds the replicate
+                # columns ("c0_1", "c0_2"). Every downstream `df[g]` and
+                # `df.melt(value_vars=group_names)` would raise. Rebuild df in base-group form
+                # so the replicate case behaves exactly like the single-column case.
+                df = pd.DataFrame({g: pd.Series(v, dtype=float) for g, v in zip(group_names, groups)})
+                # Base ids must resolve to display names, otherwise post-hoc labels come back as
+                # raw ids ("c0") and the chart's significance brackets — keyed by display name —
+                # silently fail to render.
+                for _bid, _bname in base_col_id_to_name.items():
+                    if _bname:
+                        col_id_to_name.setdefault(_bid, _bname)
         
         if table_type == "Column":
             if test_id == "One-Sample t-test":
@@ -357,7 +415,7 @@ def run():
                 result["report_markdown"] = f"A **One-Sample Sign test** was performed. The result was **{sig}** (p = {result['p_value']:.4f})."
 
             elif test_id == "Unpaired t test" or test_id == "Unpaired t-test":
-                res = pg.ttest(groups[0], groups[1], paired=False, correction=False)
+                res = pg.ttest(groups[0], groups[1], paired=False, correction=False, alternative=tails)
                 result["statistic"] = get_clean_float(res['T'].values[0])
                 result["p_value"] = get_clean_float((res['p-val'] if 'p-val' in res else res['p_val']).values[0])
                 result["degrees_of_freedom"] = get_clean_float(res['dof'].values[0])
@@ -373,14 +431,16 @@ def run():
                 result["report_markdown"] = f"An **Unpaired t test** was performed to compare {gn0} and {gn1}. The difference between the means was **{sig}** (t({result['degrees_of_freedom']}) = {result['statistic']:.3f}, p = {result['p_value']:.4f}). The effect size (Cohen's d) was {result['effect_size']['cohen_d']:.3f}."
             
             elif test_id == "Mann-Whitney test":
-                res = pg.mwu(groups[0], groups[1])
+                res = pg.mwu(groups[0], groups[1], alternative=tails)
                 result["statistic"] = get_clean_float(res['U-val'].values[0]) if 'U-val' in res else get_clean_float(res['U_val'].values[0] if 'U_val' in res else res.iloc[0, 0])
                 result["p_value"] = get_clean_float((res['p-val'] if 'p-val' in res else res['p_val']).values[0])
                 result["effect_size"] = {"CLES": get_clean_float(res['CLES'].values[0])}
 
                 # Exact P accounting for ties (matches GraphPad Prism) for small samples;
                 # pingouin's asymptotic (normal-approx) P is kept for larger n.
-                _exact_p = _mwu_exact_p(groups[0], groups[1])
+                # The exact path OVERWRITES p below, so it must know the direction too --
+                # otherwise a one-tailed request silently returns a two-sided p for n <= 16.
+                _exact_p = _mwu_exact_p(groups[0], groups[1], alternative=tails)
                 p_method = "asymptotic (normal approximation)"
                 if _exact_p is not None:
                     result["p_value"] = get_clean_float(_exact_p)
@@ -392,7 +452,7 @@ def run():
                 result["report_markdown"] = f"A **Mann-Whitney U test** was performed to compare {gn0} and {gn1}. The difference was **{sig}** (U = {result['statistic']:.3f}, {p_method} p = {result['p_value']:.4f})."
                 
             elif test_id == "Welch's t-test":
-                res = pg.ttest(groups[0], groups[1], paired=False, correction=True)
+                res = pg.ttest(groups[0], groups[1], paired=False, correction=True, alternative=tails)
                 result["statistic"] = get_clean_float(res['T'].values[0])
                 result["p_value"] = get_clean_float((res['p-val'] if 'p-val' in res else res['p_val']).values[0])
                 result["degrees_of_freedom"] = get_clean_float(res['dof'].values[0])
@@ -419,7 +479,7 @@ def run():
             elif test_id == "Paired t-test":
                 # Ensure same length
                 min_len = min(len(groups[0]), len(groups[1]))
-                res = pg.ttest(groups[0][:min_len], groups[1][:min_len], paired=True)
+                res = pg.ttest(groups[0][:min_len], groups[1][:min_len], paired=True, alternative=tails)
                 result["statistic"] = get_clean_float(res['T'].values[0])
                 result["p_value"] = get_clean_float((res['p-val'] if 'p-val' in res else res['p_val']).values[0])
                 result["degrees_of_freedom"] = get_clean_float(res['dof'].values[0])
@@ -492,31 +552,197 @@ def run():
                 # Post-Hocs
                 # Post-Hocs: Tukey HSD via statsmodels (uses libqsturng internally -> WASM-safe)
                 if post_hoc_family != "none":
-                    _vals, _labs = [], []
-                    for g in group_names:
-                        arr = df[g].dropna().values
-                        _vals.extend(list(arr)); _labs.extend([g] * len(arr))
-                    _mc = MultiComparison(np.array(_vals, dtype=float), np.array(_labs))
-                    _res = _mc.tukeyhsd()
+                    _pht = str(post_hoc_test or "")
+                    _phl = _pht.lower()
+                    # Resolve the requested multiple-comparison METHOD. Prism's one-way ANOVA
+                    # menu is: Tukey / Bonferroni / Sidak / Holm-Sidak (all-pairs or a chosen
+                    # subset) and Dunnett (vs a control). Anything we cannot honour must raise,
+                    # never silently fall back to a different test.
+                    if "tukey" in _phl:
+                        _mc_method = "tukey"
+                    elif "holm-\u0161\u00edd\u00e1k" in _phl or "holm-sidak" in _phl:
+                        _mc_method = "holm-sidak"
+                    elif "holm" in _phl:
+                        _mc_method = "holm"
+                    elif "bonferroni" in _phl:
+                        _mc_method = "bonferroni"
+                    elif "\u0161\u00edd\u00e1k" in _phl or "sidak" in _phl:
+                        _mc_method = "sidak"
+                    elif "games-howell" in _phl or "t3" in _phl:
+                        # These exist only on the unequal-variance branches. Falling through to
+                        # Tukey here would be a silent wrong-test substitution.
+                        raise ValueError(
+                            f"'{_pht}' is not available for {test_id}. Games-Howell and Dunnett's T3 "
+                            "require Welch's or Brown-Forsythe ANOVA (unequal variances). "
+                            "Refusing to substitute Tukey's HSD."
+                        )
+                    elif "dunnett" in _phl and post_hoc_family != "control_vs_others":
+                        # Dunnett is valid ONLY via the compare-to-control family, which is
+                        # handled below. Asking for it with any other family must not quietly
+                        # return Tukey.
+                        raise ValueError(
+                            f"'{_pht}' requires the 'compare each group to a control' option. "
+                            "Refusing to substitute Tukey's HSD."
+                        )
+                    else:
+                        _mc_method = "tukey"
+                    _use_pairwise = (_mc_method != "tukey")
                     ph_results = []
-                    # rows: [group1, group2, meandiff, p-adj, lower, upper, reject]
-                    for row in _res._results_table.data[1:]:
-                        g1, g2, meandiff, padj = row[0], row[1], float(row[2]), float(row[3])
-                        if post_hoc_family == "specific_pairs":
-                            is_in = any((p[0] == g1 and p[1] == g2) or (p[0] == g2 and p[1] == g1) for p in specific_pairs)
-                            if not is_in:
+
+                    if post_hoc_family == "control_vs_others":
+                        # Prism: "Compare each column to a control column" -> Dunnett's test.
+                        # Dunnett uses its own multivariate-t distribution; it is NOT Tukey
+                        # filtered to the control rows.
+                        if not hasattr(stats, "dunnett"):
+                            raise RuntimeError(
+                                "Dunnett's test requires scipy >= 1.11. Refusing to silently "
+                                "substitute a different post-hoc test."
+                            )
+                        _ctrl = options.get("controlGroup") or ""
+                        if _ctrl not in group_names:
+                            _ctrl = group_names[0]
+                        _others = [g for g in group_names if g != _ctrl]
+                        if not _others:
+                            raise ValueError("Dunnett's test needs a control group and at least one other group.")
+                        _cd = np.asarray(df[_ctrl].dropna().values, dtype=float)
+                        _od = [np.asarray(df[g].dropna().values, dtype=float) for g in _others]
+                        _dres = stats.dunnett(*_od, control=_cd,
+                                              random_state=np.random.default_rng(DUNNETT_SEED))
+                        _dci = _dres.confidence_interval()
+                        _dp = np.ravel(_dres.pvalue); _dlo = np.ravel(_dci.low); _dhi = np.ravel(_dci.high)
+                        for _i, _g in enumerate(_others):
+                            # Orientation is scipy's: treatment - control. Do NOT force the
+                            # difference positive here; direction vs control is meaningful and
+                            # the CI must stay consistent with it.
+                            _diff = float(np.mean(_od[_i]) - np.mean(_cd))
+                            _p = float(_dp[_i])
+                            ph_results.append({
+                                "group1": col_id_to_name.get(_g, _g),
+                                "group2": col_id_to_name.get(_ctrl, _ctrl),
+                                "mean_diff": get_clean_float(_diff),
+                                "p_value": get_clean_float(_p),
+                                "ci_lower": get_clean_float(float(_dlo[_i])),
+                                "ci_upper": get_clean_float(float(_dhi[_i])),
+                                "significant": bool(_p < 0.05),
+                            })
+                        _cname = col_id_to_name.get(_ctrl, _ctrl)
+                        result["post_hocs"] = {"method": "Dunnett's multiple comparisons test",
+                                               "control_group": _cname,
+                                               "comparisons": ph_results}
+                        report += (f"Post-hoc comparisons using **Dunnett's test** were conducted, "
+                                   f"comparing each group to the control ({_cname}). ")
+                    elif _use_pairwise:
+                        # Prism: for a chosen subset of comparisons, run t tests and adjust
+                        # (Holm) across ONLY the selected pairs. Filtering Tukey output is
+                        # wrong: Tukey adjusts for all k(k-1)/2 comparisons.
+                        _welch = "Welch" in _pht
+                        _all_vals, _all_labs = [], []
+                        for g in group_names:
+                            arr = df[g].dropna().values
+                            _all_vals.extend(list(arr)); _all_labs.extend([g] * len(arr))
+                        _N = len(_all_vals); _k = len(group_names)
+                        _mse = np.nan
+                        if _N > _k:
+                            _ss = 0.0
+                            for g in group_names:
+                                _a = df[g].dropna().values
+                                if len(_a): _ss += float(((_a - _a.mean()) ** 2).sum())
+                            _mse = _ss / (_N - _k)
+                        _pairs_out, _p_raw = [], []
+                        for g1, g2 in combinations(group_names, 2):
+                            if post_hoc_family == "specific_pairs":
+                                is_in = any((p[0] == g1 and p[1] == g2) or (p[0] == g2 and p[1] == g1) for p in specific_pairs)
+                                if not is_in:
+                                    continue
+                            _a = df[g1].dropna().values; _b = df[g2].dropna().values
+                            _n1, _n2 = len(_a), len(_b)
+                            if _n1 < 2 or _n2 < 2: continue
+                            _diff = float(_a.mean() - _b.mean())
+                            if _welch:
+                                _v1 = float(_a.var(ddof=1)); _v2 = float(_b.var(ddof=1))
+                                _se = np.sqrt(_v1/_n1 + _v2/_n2)
+                                _dfp = (_v1/_n1 + _v2/_n2) ** 2 / ((_v1/_n1) ** 2/(_n1-1) + (_v2/_n2) ** 2/(_n2-1))
+                            else:
+                                _se = np.sqrt(_mse * (1.0/_n1 + 1.0/_n2))
+                                _dfp = float(_N - _k)
+                            if not (_se > 0):
                                 continue
-                        if meandiff < 0:               # report a positive mean difference
-                            meandiff = -meandiff; g1, g2 = g2, g1
-                        ph_results.append({
-                            "group1": col_id_to_name.get(g1, g1),
-                            "group2": col_id_to_name.get(g2, g2),
-                            "mean_diff": get_clean_float(meandiff),
-                            "p_value": get_clean_float(padj),
-                            "significant": bool(padj < 0.05),
-                        })
-                    result["post_hocs"] = {"method": "Tukey's HSD", "comparisons": ph_results}
-                    report += "Post-hoc comparisons using Tukey's HSD test were conducted. "
+                            _t = _diff / _se
+                            _p = float(2.0 * stats.t.sf(abs(_t), _dfp))
+                            _pairs_out.append((g1, g2, _diff, _se))
+                            _dfp_last = _dfp
+                            _p_raw.append(_p)
+                        if _p_raw:
+                            if multipletests is not None:
+                                _rej, _padj, _, _ = multipletests(_p_raw, alpha=0.05, method=_mc_method)
+                            else:
+                                _m = len(_p_raw)
+                                _padj = [min(1.0, p * _m) for p in _p_raw]
+                                _rej = [p < 0.05 for p in _padj]
+                            # Single-step methods have simultaneous CIs; stepwise ones (Holm,
+                            # Holm-Sidak) do not -- Prism omits CIs for those too.
+                            _C = len(_p_raw)
+                            _tcrit = None
+                            if _mc_method == "bonferroni":
+                                _tcrit = stats.t.ppf(1.0 - (0.05 / _C) / 2.0, _dfp_last)
+                            elif _mc_method == "sidak":
+                                _a_s = 1.0 - (1.0 - 0.05) ** (1.0 / _C)
+                                _tcrit = stats.t.ppf(1.0 - _a_s / 2.0, _dfp_last)
+                            for _i, (g1, g2, _diff, _se_i) in enumerate(_pairs_out):
+                                _gg1, _gg2, _dd = g1, g2, _diff
+                                _lo = _hi = None
+                                if _tcrit is not None:
+                                    _lo = _diff - _tcrit * _se_i
+                                    _hi = _diff + _tcrit * _se_i
+                                if _dd < 0:
+                                    _dd = -_dd; _gg1, _gg2 = _gg2, _gg1
+                                    if _lo is not None:
+                                        _lo, _hi = -_hi, -_lo
+                                ph_results.append({
+                                    "group1": col_id_to_name.get(_gg1, _gg1),
+                                    "group2": col_id_to_name.get(_gg2, _gg2),
+                                    "mean_diff": get_clean_float(_dd),
+                                    "p_value": get_clean_float(float(_padj[_i])),
+                                    "ci_lower": get_clean_float(_lo) if _lo is not None else None,
+                                    "ci_upper": get_clean_float(_hi) if _hi is not None else None,
+                                    "significant": bool(_rej[_i]),
+                                })
+                        _pretty = {"bonferroni": "Bonferroni", "sidak": "\u0160\u00edd\u00e1k",
+                                   "holm": "Holm", "holm-sidak": "Holm-\u0160\u00edd\u00e1k"}.get(_mc_method, _mc_method)
+                        _scope = "selected pairs" if post_hoc_family == "specific_pairs" else "all pairs"
+                        _method_name = (f"Pairwise Welch t-tests ({_pretty}-adjusted, {_scope})" if _welch
+                                        else f"Pairwise t-tests, pooled SD ({_pretty}-adjusted, {_scope})")
+                        result["post_hocs"] = {"method": _method_name, "comparisons": ph_results}
+                        report += f"Post-hoc comparisons using {_method_name} were conducted across the selected pairs. "
+                    else:
+                        _vals, _labs = [], []
+                        for g in group_names:
+                            arr = df[g].dropna().values
+                            _vals.extend(list(arr)); _labs.extend([g] * len(arr))
+                        _mc = MultiComparison(np.array(_vals, dtype=float), np.array(_labs))
+                        _res = _mc.tukeyhsd()
+                        # rows: [group1, group2, meandiff, p-adj, lower, upper, reject]
+                        for row in _res._results_table.data[1:]:
+                            g1, g2, meandiff, padj = row[0], row[1], float(row[2]), float(row[3])
+                            ci_lo, ci_hi = float(row[4]), float(row[5])
+                            if post_hoc_family == "specific_pairs":
+                                is_in = any((p[0] == g1 and p[1] == g2) or (p[0] == g2 and p[1] == g1) for p in specific_pairs)
+                                if not is_in:
+                                    continue
+                            if meandiff < 0:               # report a positive mean difference
+                                meandiff = -meandiff; g1, g2 = g2, g1
+                                ci_lo, ci_hi = -ci_hi, -ci_lo   # CI must flip with the sign
+                            ph_results.append({
+                                "group1": col_id_to_name.get(g1, g1),
+                                "group2": col_id_to_name.get(g2, g2),
+                                "mean_diff": get_clean_float(meandiff),
+                                "p_value": get_clean_float(padj),
+                                "ci_lower": get_clean_float(ci_lo),
+                                "ci_upper": get_clean_float(ci_hi),
+                                "significant": bool(padj < 0.05),
+                            })
+                        result["post_hocs"] = {"method": "Tukey's HSD", "comparisons": ph_results}
+                        report += "Post-hoc comparisons using Tukey's HSD test were conducted. "
 
                         
             elif test_id == "Welch's ANOVA":
@@ -535,10 +761,19 @@ def run():
                 
                 # Post-Hocs for Welch's ANOVA: Games-Howell or Dunnett's T3
                 if post_hoc_family != "none":
+                    _pht_r = str(post_hoc_test or "")
+                    if _pht_r not in ("Games-Howell test", "Dunnett's T3 test", "None", ""):
+                        # This branch implements only Games-Howell and Dunnett's T3. Anything else
+                        # would silently produce no post-hoc table at all.
+                        raise ValueError(
+                            f"'{_pht_r}' is not available for {test_id}. Unequal-variance ANOVA "
+                            "supports Games-Howell or Dunnett's T3. Refusing to return a different "
+                            "test or an empty table."
+                        )
                     if post_hoc_test == "Games-Howell test":
                         ph_results = []
                         k_groups = len(group_names)
-                        for g1, g2 in itertools.combinations(group_names, 2):
+                        for g1, g2 in combinations(group_names, 2):
                             if post_hoc_family == "specific_pairs":
                                 is_in = any((p[0] == g1 and p[1] == g2) or (p[0] == g2 and p[1] == g1) for p in specific_pairs)
                                 if not is_in: continue
@@ -553,7 +788,7 @@ def run():
                             t = (mi - mj) / se
                             q = abs(t) * np.sqrt(2.0)
                             df_welch = (vi/ni + vj/nj)**2 / ((vi/ni)**2/(ni-1) + (vj/nj)**2/(nj-1))
-                            p_val = float(np.ravel(psturng(q, k_groups, df_welch))[0])
+                            p_val = float(_patched_sr_sf_scalar(q, k_groups, df_welch))
                             
                             ph_results.append({
                                 "group1": col_id_to_name.get(g1, g1),
@@ -568,16 +803,23 @@ def run():
                         ph = pg.pairwise_gameshowell(data=df.melt(value_vars=group_names).dropna(), dv='value', between='variable')
                         ph_results = []
                         k_groups = len(group_names)
+                        _ctrl_t3 = options.get("controlGroup") or ""
+                        if _ctrl_t3 not in group_names:
+                            _ctrl_t3 = group_names[0] if group_names else ""
+                        _ncomp_t3 = (len(group_names) - 1) if post_hoc_family == "control_vs_others" else None
                         for idx, row in ph.iterrows():
                             g1 = row['A']
                             g2 = row['B']
                             if post_hoc_family == "specific_pairs":
                                 is_in = any((p[0] == g1 and p[1] == g2) or (p[0] == g2 and p[1] == g1) for p in specific_pairs)
                                 if not is_in: continue
+                            elif post_hoc_family == "control_vs_others":
+                                if g1 != _ctrl_t3 and g2 != _ctrl_t3:
+                                    continue
                             
                             t_stat = row['T']
                             df_welch = row['df']
-                            p_val = dunnetts_t3_pvalue(t_stat, k_groups, df_welch)
+                            p_val = dunnetts_t3_pvalue(t_stat, k_groups, df_welch, n_comparisons=_ncomp_t3)
                             
                             ph_results.append({
                                 "group1": col_id_to_name.get(g1, g1),
@@ -625,10 +867,19 @@ def run():
 
                 # Post-Hocs for robust ANOVA: Games-Howell or Dunnett's T3
                 if post_hoc_family != "none":
+                    _pht_r = str(post_hoc_test or "")
+                    if _pht_r not in ("Games-Howell test", "Dunnett's T3 test", "None", ""):
+                        # This branch implements only Games-Howell and Dunnett's T3. Anything else
+                        # would silently produce no post-hoc table at all.
+                        raise ValueError(
+                            f"'{_pht_r}' is not available for {test_id}. Unequal-variance ANOVA "
+                            "supports Games-Howell or Dunnett's T3. Refusing to return a different "
+                            "test or an empty table."
+                        )
                     if post_hoc_test == "Games-Howell test":
                         ph_results = []
                         k_groups = len(group_names)
-                        for g1, g2 in itertools.combinations(group_names, 2):
+                        for g1, g2 in combinations(group_names, 2):
                             if post_hoc_family == "specific_pairs":
                                 is_in = any((p[0] == g1 and p[1] == g2) or (p[0] == g2 and p[1] == g1) for p in specific_pairs)
                                 if not is_in: continue
@@ -643,7 +894,7 @@ def run():
                             t = (mi - mj) / se
                             q = abs(t) * np.sqrt(2.0)
                             df_welch = (vi/ni + vj/nj)**2 / ((vi/ni)**2/(ni-1) + (vj/nj)**2/(nj-1))
-                            p_val = float(np.ravel(psturng(q, k_groups, df_welch))[0])
+                            p_val = float(_patched_sr_sf_scalar(q, k_groups, df_welch))
                             
                             ph_results.append({
                                 "group1": col_id_to_name.get(g1, g1),
@@ -658,16 +909,23 @@ def run():
                         ph = pg.pairwise_gameshowell(data=df.melt(value_vars=group_names).dropna(), dv='value', between='variable')
                         ph_results = []
                         k_groups = len(group_names)
+                        _ctrl_t3 = options.get("controlGroup") or ""
+                        if _ctrl_t3 not in group_names:
+                            _ctrl_t3 = group_names[0] if group_names else ""
+                        _ncomp_t3 = (len(group_names) - 1) if post_hoc_family == "control_vs_others" else None
                         for idx, row in ph.iterrows():
                             g1 = row['A']
                             g2 = row['B']
                             if post_hoc_family == "specific_pairs":
                                 is_in = any((p[0] == g1 and p[1] == g2) or (p[0] == g2 and p[1] == g1) for p in specific_pairs)
                                 if not is_in: continue
+                            elif post_hoc_family == "control_vs_others":
+                                if g1 != _ctrl_t3 and g2 != _ctrl_t3:
+                                    continue
                             
                             t_stat = row['T']
                             df_welch = row['df']
-                            p_val = dunnetts_t3_pvalue(t_stat, k_groups, df_welch)
+                            p_val = dunnetts_t3_pvalue(t_stat, k_groups, df_welch, n_comparisons=_ncomp_t3)
                             
                             ph_results.append({
                                 "group1": col_id_to_name.get(g1, g1),
@@ -693,16 +951,27 @@ def run():
                 p_col = next((c for c in ['p_GG_corr', 'p-GG-corr', 'p-unc', 'p_unc', 'p-val', 'p_val', 'pval', 'p'] if c in res), None)
                 if p_col is None: raise ValueError("Could not compute p-value. Check data for zero variance or small sample size.")
                 result["p_value"] = get_clean_float(res[p_col].values[0])
-                # Compute degrees of freedom robustly: try multiple possible column names
-                df1_col = next((c for c in ['ddof1', 'DF1', 'df1', 'DF', 'df'] if c in res.columns), None)
-                df2_col = next((c for c in ['ddof2', 'DF2', 'df2'] if c in res.columns), None)
-                if df1_col and df2_col:
-                    result["degrees_of_freedom"] = f"{get_clean_float(res[df1_col].values[0]):.0f}, {get_clean_float(res[df2_col].values[0]):.0f}"
+                # Degrees of freedom. If we surfaced a Greenhouse-Geisser corrected p we MUST
+                # also report GG-corrected df, otherwise F(df1,df2) and p disagree.
+                _k = len(group_names)
+                _n = len(df_clean)
+                _df1 = float(_k - 1)
+                _df2 = float((_n - 1) * (_k - 1))
+                _used_gg = str(p_col) in ('p_GG_corr', 'p-GG-corr')
+                _eps_col = next((c for c in ['eps', 'Eps', 'epsilon'] if c in res.columns), None)
+                _eps = 1.0
+                if _eps_col is not None:
+                    try:
+                        _e = get_clean_float(res[_eps_col].values[0])
+                        if _e is not None and _e > 0: _eps = float(_e)
+                    except Exception:
+                        _eps = 1.0
+                if _used_gg and _eps_col is not None:
+                    result["degrees_of_freedom"] = f"{_df1 * _eps:.3f}, {_df2 * _eps:.3f}"
+                    result["sphericity_epsilon"] = _eps
+                    result["p_value_correction"] = "Greenhouse-Geisser"
                 else:
-                    # Compute from data: df1 = k-1, df2 = (n-1)*(k-1) where k = groups, n = subjects
-                    k = len(group_names)
-                    n = len(df_clean)
-                    result["degrees_of_freedom"] = f"{k-1}, {(n-1)*(k-1)}"
+                    result["degrees_of_freedom"] = f"{_df1:.0f}, {_df2:.0f}"
                 
                 sig = "significant" if result["p_value"] < 0.05 else "not significant"
                 report = f"A **Repeated Measures ANOVA** was performed. There was a **{sig}** effect (F({result['degrees_of_freedom']}) = {result['statistic']:.3f}, p = {result['p_value']:.4f}).\n\n"
@@ -772,28 +1041,55 @@ def run():
                 
                 # Post-Hocs using scikit-posthocs
                 if post_hoc_family != "none" and post_hoc_test == "Dunn's test":
-                    ph = sp.posthoc_dunn(df.melt(value_vars=group_names).dropna(), val_col='value', group_col='variable', p_adjust='bonferroni')
-                    
-                    ph_results = []
-                    for i in range(len(ph.columns)):
-                        for j in range(i+1, len(ph.columns)):
-                            g1 = ph.columns[i]
-                            g2 = ph.columns[j]
-                            p_val = ph.iloc[i, j]
-                            
-                            if post_hoc_family == "specific_pairs":
-                                is_in = any((p[0] == g1 and p[1] == g2) or (p[0] == g2 and p[1] == g1) for p in specific_pairs)
-                                if not is_in:
-                                    continue
-                                    
+                    _melted_kw = df.melt(value_vars=group_names).dropna()
+                    if post_hoc_family == "control_vs_others":
+                        # Bonferroni must span ONLY the k-1 control comparisons, not all pairs.
+                        _ph_raw = sp.posthoc_dunn(_melted_kw, val_col='value', group_col='variable', p_adjust=None)
+                        _ctrl_kw = options.get("controlGroup") or ""
+                        _cols_kw = list(_ph_raw.columns)
+                        if _ctrl_kw not in _cols_kw:
+                            _ctrl_kw = group_names[0]
+                        _others_kw = [g for g in _cols_kw if g != _ctrl_kw]
+                        _m_kw = max(1, len(_others_kw))
+                        ph_results = []
+                        for _g in _others_kw:
+                            _p_un = float(_ph_raw.loc[_ctrl_kw, _g])
+                            _p_adj = min(1.0, _p_un * _m_kw)
                             ph_results.append({
-                                "group1": col_id_to_name.get(g1, g1),
-                                "group2": col_id_to_name.get(g2, g2),
-                                "p_value": get_clean_float(p_val),
-                                "significant": bool(p_val < 0.05)
+                                "group1": col_id_to_name.get(_g, _g),
+                                "group2": col_id_to_name.get(_ctrl_kw, _ctrl_kw),
+                                "p_value": get_clean_float(_p_adj),
+                                "significant": bool(_p_adj < 0.05)
                             })
-                    result["post_hocs"] = {"method": "Dunn's test (Bonferroni correction)", "comparisons": ph_results}
-                    report += "Post-hoc comparisons using Dunn's test with Bonferroni correction were conducted."
+                        _cname_kw = col_id_to_name.get(_ctrl_kw, _ctrl_kw)
+                        result["post_hocs"] = {"method": "Dunn's test vs control (Bonferroni)",
+                                               "control_group": _cname_kw,
+                                               "comparisons": ph_results}
+                        report += (f"Post-hoc comparisons using Dunn's test with Bonferroni correction "
+                                   f"were conducted against the control ({_cname_kw}).")
+                    else:
+                        ph = sp.posthoc_dunn(_melted_kw, val_col='value', group_col='variable', p_adjust='bonferroni')
+
+                        ph_results = []
+                        for i in range(len(ph.columns)):
+                            for j in range(i+1, len(ph.columns)):
+                                g1 = ph.columns[i]
+                                g2 = ph.columns[j]
+                                p_val = ph.iloc[i, j]
+
+                                if post_hoc_family == "specific_pairs":
+                                    is_in = any((p[0] == g1 and p[1] == g2) or (p[0] == g2 and p[1] == g1) for p in specific_pairs)
+                                    if not is_in:
+                                        continue
+
+                                ph_results.append({
+                                    "group1": col_id_to_name.get(g1, g1),
+                                    "group2": col_id_to_name.get(g2, g2),
+                                    "p_value": get_clean_float(p_val),
+                                    "significant": bool(p_val < 0.05)
+                                })
+                        result["post_hocs"] = {"method": "Dunn's test (Bonferroni correction)", "comparisons": ph_results}
+                        report += "Post-hoc comparisons using Dunn's test with Bonferroni correction were conducted."
 
             if "report_markdown" not in result or result["report_markdown"] == "":
                 result["report_markdown"] = report if 'report' in locals() else "Test not fully implemented yet."
@@ -1671,7 +1967,7 @@ def run():
                                     se = np.sqrt(_res_ms * (1.0/counts[a] + 1.0/counts[b]))
                                     q = abs(diff) * np.sqrt(2.0) / se if se > 0 else 0.0
                                     try:
-                                        p_adj = float(psturng(q, k, _res_df))
+                                        p_adj = float(_patched_sr_sf_scalar(q, k, _res_df))
                                     except Exception:
                                         p_adj = float('nan')
                                     if not np.isnan(p_adj):
@@ -1691,14 +1987,15 @@ def run():
                     if test_id == "Mixed-effects ANOVA":
                         res = pg.mixed_anova(data=df_long, dv='Value', between=factor1_col, within='Factor2', subject='Subject')
                     else:
-                        res = pg.rm_anova(data=df_long, dv='Value', within=[factor1_col, 'Factor2'], subject='Subject')
+                        res = pg.rm_anova(data=df_long, dv='Value', within=[factor1_col, 'Factor2'], subject='Subject', correction=True)
                         
                     report = f"A **{test_id}** was performed.\n\n"
                     table_header = "| Source | SS | DF | MS | F | p-value | np2 | eps |\n"
                     table_header += "|---|---|---|---|---|---|---|---|\n"
                     report += table_header
                     
-                    p_col = next((c for c in ['p_GG_corr', 'p-GG-corr', 'p-unc', 'p_unc', 'p-val', 'p_val', 'pval', 'p'] if c in res.columns), None)
+                    anovaCorrection = options.get('transformOptions', {}).get('anovaCorrection', 'none')
+                    
                     for _, row in res.iterrows():
                         src = row['Source']
                         ss = row.get('SS', 0)
@@ -1706,7 +2003,16 @@ def run():
                         df2_val = row.get('DF2', 0)
                         ms = row.get('MS', 0)
                         f = row.get('F', 0)
-                        p = row[p_col] if p_col else np.nan
+                        
+                        # Apply GG or None based on option
+                        if anovaCorrection == "GG" and 'p-GG-corr' in res.columns and not pd.isna(row.get('p-GG-corr')):
+                            p = row['p-GG-corr']
+                        elif anovaCorrection == "GG" and 'p_GG_corr' in res.columns and not pd.isna(row.get('p_GG_corr')):
+                            p = row['p_GG_corr']
+                        else:
+                            p_col = next((c for c in ['p-unc', 'p_unc', 'p-val', 'p_val', 'pval', 'p'] if c in res.columns), None)
+                            p = row[p_col] if p_col else np.nan
+                            
                         np2 = row.get('np2', 0)
                         eps = row.get('eps', '')
                         if isinstance(eps, float): eps = f"{eps:.3f}"
@@ -2019,7 +2325,7 @@ def run():
                                 se = np.sqrt(ms_b / n_1 + ms_b / n_2)
                                 t = (mean_1 - mean_2) / se
                                 q = abs(t) * np.sqrt(2.0)
-                                p_val = float(np.ravel(psturng(q, len(treats), df_b))[0])
+                                p_val = float(_patched_sr_sf_scalar(q, len(treats), df_b))
                                 
                                 ph_results.append({
                                     "group1": col_id_to_name.get(g1, g1),
@@ -2652,6 +2958,14 @@ def run():
         result["error"] = "Division by zero. This usually happens when a group has no variance (all values are identical) or there is not enough data to compute statistics."
     except Exception as e:
         _msg = str(e)
+        _etype = type(e).__name__
+        import traceback as _tb
+        result["error_detail"] = _tb.format_exc()
+        if _etype in ("NameError", "AttributeError", "ImportError", "ModuleNotFoundError", "SyntaxError", "UnboundLocalError"):
+            # These are ALWAYS engine bugs. Never blame the user's data for them.
+            result["error"] = f"Internal engine error ({_etype}): {_msg}. This is a bug in StatLens, not a problem with your data."
+            result["status"] = "error"
+            return result
         if "NoneType" in _msg and "not supported" in _msg:
             result["error"] = "This test could not be computed for this data. The result is undefined \u2014 this usually means a group has zero variance (all values identical), the differences are constant, or there are too few observations."
         elif _msg.strip().strip("'") == "F":

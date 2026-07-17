@@ -3,7 +3,7 @@ import type { MouseEvent } from "react"
 import type { Workbook, TableType } from "@/types/workbook"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Plus, Table, BarChart2, Activity, ChevronLeft, ChevronRight, CheckSquare, Trash2, Edit2 } from "lucide-react"
+import { Plus, Table, BarChart2, Activity, ChevronLeft, ChevronRight, CheckSquare, Trash2, Edit2, LineChart, BarChart3, LayoutGrid, Grid3x3, PieChart, Layers, Network, HeartPulse } from "lucide-react"
 import { DataTableChooser } from "./DataTableChooser"
 import { createNewSheet } from "@/data/sheetFactory"
 import {
@@ -214,9 +214,9 @@ export function Sidebar({ workbook, onUpdate, activeSheetId, activeAnalysisId, a
         id: newGraphId,
         sheetId: sheet.id,
         analysisId: analysis?.id,
-        graphFamily: "Column",
-        chartType: "bar-error",
-        name: `Graph of ${sheet.name}`,
+        graphFamily: sheet.type === "Survival" ? "Survival" : "Column",
+        chartType: sheet.type === "Survival" ? "km-step" : "bar-error",
+        name: `Graph ${prev.graphs.length + 1}`,
         createdAt: new Date().toISOString(),
         config: {
           errorBarType: "mean_sem",
@@ -228,13 +228,18 @@ export function Sidebar({ workbook, onUpdate, activeSheetId, activeAnalysisId, a
           background: "transparent",
           significanceScale: "standard",
           showNsBrackets: true,
+          showPostHocCaption: true,
           showXAxisTitle: true,
           showYAxisTitle: true,
           theme: workbook.appTheme as any,
           fontFamily: "Arial, sans-serif",
-          fontSize: 12,
-          showLegend: false,
-          pointSize: 3
+          fontSize: 14,
+          pointSize: 4,
+          errorBars: "se",
+          survivalShowAs: "fractions",
+          survivalSymbolsAt: "censored",
+          survivalStyle: "staircase-ticks",
+          showLegend: false
         }
       }]
     }))
@@ -331,7 +336,7 @@ export function Sidebar({ workbook, onUpdate, activeSheetId, activeAnalysisId, a
       <div className={`flex flex-col h-full overflow-hidden transition-opacity duration-300 ${isCollapsed ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
         
         {/* Bulk Action Header */}
-        <div className="p-4 pb-0 flex items-center justify-between gap-2">
+        <div className="p-2 pb-0 flex items-center justify-between gap-2">
            {isSelectionMode ? (
              <>
                <Button variant="ghost" size="sm" onClick={() => { setIsSelectionMode(false); setSelectedIds(new Set()); }} className="text-muted-foreground shrink-0">
@@ -356,11 +361,11 @@ export function Sidebar({ workbook, onUpdate, activeSheetId, activeAnalysisId, a
           {/* Data Tables Section */}
           <div className="min-w-0 w-full">
             <div className="flex items-center justify-between mb-3 gap-2 min-w-0 w-full">
-              <h3 className="flex-1 min-w-0 text-sm font-semibold uppercase tracking-wider text-muted-foreground truncate">
+              <h3 className="flex-1 min-w-0 text-base font-semibold uppercase tracking-wider text-muted-foreground truncate">
                 Data Tables
               </h3>
               {workbook.sheets.length > 0 && (
-                <Button variant="ghost" size="sm" className="h-8 px-3 text-sm shrink-0" onClick={toggleAllSheets}>
+                <Button variant="ghost" size="sm" className="h-8 px-3 text-base shrink-0" onClick={toggleAllSheets}>
                   {(allSheetsSelected && isSelectionMode) ? "Deselect All" : "Select All"}
                 </Button>
               )}
@@ -374,12 +379,24 @@ export function Sidebar({ workbook, onUpdate, activeSheetId, activeAnalysisId, a
             </div>
 
             <div className="space-y-1">
-              {workbook.sheets.map(sheet => (
+              {workbook.sheets.map(sheet => {
+                const IconComponent = {
+                  "XY": LineChart,
+                  "Column": BarChart3,
+                  "Grouped": LayoutGrid,
+                  "Contingency": Grid3x3,
+                  "Survival": HeartPulse,
+                  "PartsOfWhole": PieChart,
+                  "MultipleVariables": Layers,
+                  "Nested": Network
+                }[sheet.type] || Table;
+                
+                return (
                 <ContextMenu key={sheet.id}>
                   <ContextMenuTrigger asChild>
                     <button
                       onClick={(e) => handleItemClick(e, sheet.id, 'sheet')}
-                      className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-accent hover:text-accent-foreground text-left ${activeSheetId === sheet.id && !isSelectionMode ? 'bg-accent font-medium text-accent-foreground' : 'text-muted-foreground'}`}
+                      className={`w-full flex items-center gap-2 px-2 py-1.5 text-base rounded-md hover:bg-accent hover:text-accent-foreground text-left transition-all duration-200 hover:translate-x-1 ${activeSheetId === sheet.id && !isSelectionMode ? 'bg-accent font-medium text-accent-foreground' : 'text-muted-foreground'}`}
                     >
                       {isSelectionMode && (
                         <Checkbox 
@@ -388,7 +405,7 @@ export function Sidebar({ workbook, onUpdate, activeSheetId, activeAnalysisId, a
                           className="mr-2"
                         />
                       )}
-                      {!isSelectionMode && <Table className={`h-4 w-4 ${activeSheetId === sheet.id ? 'text-blue-500' : 'text-muted-foreground/70'}`} />}
+                      {!isSelectionMode && <IconComponent className={`h-4 w-4 shrink-0 transition-colors ${activeSheetId === sheet.id ? 'text-blue-500' : 'text-muted-foreground/70'}`} />}
                       <span className="truncate">{sheet.name}</span>
                     </button>
                   </ContextMenuTrigger>
@@ -403,7 +420,7 @@ export function Sidebar({ workbook, onUpdate, activeSheetId, activeAnalysisId, a
                     </ContextMenuItem>
                   </ContextMenuContent>
                 </ContextMenu>
-              ))}
+              )})}
               {workbook.sheets.length === 0 && (
                 <p className="text-xs text-muted-foreground px-2 py-1 italic">None</p>
               )}
@@ -413,11 +430,11 @@ export function Sidebar({ workbook, onUpdate, activeSheetId, activeAnalysisId, a
           {/* Analyses Section */}
           <div className="min-w-0 w-full">
             <div className="flex items-center justify-between mb-3 mt-6 gap-2 min-w-0 w-full">
-              <h3 className="flex-1 min-w-0 text-sm font-semibold uppercase tracking-wider text-muted-foreground truncate">
+              <h3 className="flex-1 min-w-0 text-base font-semibold uppercase tracking-wider text-muted-foreground truncate">
                 Results
               </h3>
               {workbook.analyses.length > 0 && (
-                <Button variant="ghost" size="sm" className="h-8 px-3 text-sm shrink-0" onClick={toggleAllAnalyses}>
+                <Button variant="ghost" size="sm" className="h-8 px-3 text-base shrink-0" onClick={toggleAllAnalyses}>
                   {(allAnalysesSelected && isSelectionMode) ? "Deselect All" : "Select All"}
                 </Button>
               )}
@@ -434,7 +451,7 @@ export function Sidebar({ workbook, onUpdate, activeSheetId, activeAnalysisId, a
                     <ContextMenuTrigger asChild>
                       <button
                         onClick={(e) => handleItemClick(e, analysis.id, 'analysis')}
-                        className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-accent hover:text-accent-foreground text-left ${activeAnalysisId === analysis.id && !isSelectionMode ? 'bg-accent font-medium text-accent-foreground' : 'text-muted-foreground'}`}
+                        className={`w-full flex items-center gap-2 px-2 py-1.5 text-base rounded-md hover:bg-accent hover:text-accent-foreground text-left ${activeAnalysisId === analysis.id && !isSelectionMode ? 'bg-accent font-medium text-accent-foreground' : 'text-muted-foreground'}`}
                         title={displayName}
                       >
                         {isSelectionMode && (
@@ -469,7 +486,7 @@ export function Sidebar({ workbook, onUpdate, activeSheetId, activeAnalysisId, a
           {/* Graphs Section */}
           <div className="min-w-0 w-full">
             <div className="flex items-center justify-between mb-3 mt-6 gap-2 min-w-0 w-full">
-              <h3 className="flex-1 min-w-0 text-sm font-semibold uppercase tracking-wider text-muted-foreground truncate">
+              <h3 className="flex-1 min-w-0 text-base font-semibold uppercase tracking-wider text-muted-foreground truncate">
                 Graphs
               </h3>
               <div className="flex items-center gap-1">
@@ -477,7 +494,7 @@ export function Sidebar({ workbook, onUpdate, activeSheetId, activeAnalysisId, a
                   <Plus className="h-4 w-4" />
                 </Button>
                 {workbook.graphs.length > 0 && (
-                  <Button variant="ghost" size="sm" className="h-8 px-3 text-sm shrink-0" onClick={toggleAllGraphs}>
+                  <Button variant="ghost" size="sm" className="h-8 px-3 text-base shrink-0" onClick={toggleAllGraphs}>
                     {(allGraphsSelected && isSelectionMode) ? "Deselect All" : "Select All"}
                   </Button>
                 )}
@@ -489,7 +506,7 @@ export function Sidebar({ workbook, onUpdate, activeSheetId, activeAnalysisId, a
                   <ContextMenuTrigger asChild>
                     <button
                       onClick={(e) => handleItemClick(e, graph.id, 'graph')}
-                      className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-accent hover:text-accent-foreground text-left ${activeGraphId === graph.id && !isSelectionMode ? 'bg-accent font-medium text-accent-foreground' : 'text-muted-foreground'}`}
+                      className={`w-full flex items-center gap-2 px-2 py-1.5 text-base rounded-md hover:bg-accent hover:text-accent-foreground text-left ${activeGraphId === graph.id && !isSelectionMode ? 'bg-accent font-medium text-accent-foreground' : 'text-muted-foreground'}`}
                     >
                       {isSelectionMode && (
                         <Checkbox 

@@ -1048,7 +1048,7 @@
     "expected": {
       "statistic": 91.0,
       "p_value": 0.010811,
-      "degrees_of_freedom": "2, 4"
+      "degrees_of_freedom": "1.000, 2.000"
     },
     "tolerance": "1e-3"
   },

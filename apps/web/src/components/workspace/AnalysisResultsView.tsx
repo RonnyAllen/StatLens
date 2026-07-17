@@ -60,10 +60,13 @@ export function AnalysisResultsView({ analysis, workbook, onUpdateAnalysis }: An
 
   if (isRecomputing) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-12">
-        <Loader2 className="h-8 w-8 animate-spin mb-4" />
-        <p className="text-lg font-medium">{progressMsg}</p>
-        <p className="text-sm mt-2 opacity-70">{progressPct}% complete</p>
+      <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-12 animate-fade-in">
+        <div className="w-16 h-16 relative mb-6">
+          <div className="absolute inset-0 border-4 border-primary/20 rounded-full"></div>
+          <div className="absolute inset-0 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        </div>
+        <p className="text-lg font-medium text-foreground">{progressMsg}</p>
+        <p className="text-base mt-2 opacity-70">{progressPct}% complete</p>
       </div>
     )
 
@@ -72,11 +75,11 @@ export function AnalysisResultsView({ analysis, workbook, onUpdateAnalysis }: An
   if (results?.error || error) {
     return (
       <div className="flex-1 p-8">
-        <div className="bg-destructive/10 text-destructive border border-destructive/20 p-4 rounded-lg flex items-start gap-3">
+        <div className="bg-destructive/10 text-destructive border border-destructive/20 p-4 rounded-lg flex items-start gap-3 animate-fade-in-up">
           <AlertTriangle className="h-5 w-5 mt-0.5" />
           <div>
             <h3 className="font-semibold">Analysis Error</h3>
-            <p className="text-sm mt-1">{results?.error || error}</p>
+            <p className="text-base mt-1 font-mono">{results?.error || error}</p>
           </div>
         </div>
       </div>
@@ -94,7 +97,11 @@ export function AnalysisResultsView({ analysis, workbook, onUpdateAnalysis }: An
               <Activity className="h-6 w-6 text-primary" />
               <div>
                 <h2 className="text-2xl font-bold tracking-tight">{analysis.testId}</h2>
-                <p className="text-sm text-muted-foreground">Data: {sheet.name}</p>
+                <p className="text-base text-muted-foreground">
+                  Data: {sheet.name}
+                  {analysis.options?.tails && analysis.options.tails !== "two-sided" && " • One-tailed"}
+                  {analysis.options?.tails === "two-sided" && " • Two-tailed"}
+                </p>
               </div>
             </div>
             <Button variant="outline" size="sm" onClick={() => setIsOptionsOpen(true)}>
@@ -106,10 +113,10 @@ export function AnalysisResultsView({ analysis, workbook, onUpdateAnalysis }: An
           {/* Plain Language Interpretation */}
           <Card className="bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900 shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Interpretation</CardTitle>
+              <CardTitle className="text-xl">Interpretation</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="prose prose-sm dark:prose-invert max-w-none">
+              <div className="prose prose-base dark:prose-invert max-w-none">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {report || "No interpretation generated."}
                 </ReactMarkdown>
@@ -122,11 +129,11 @@ export function AnalysisResultsView({ analysis, workbook, onUpdateAnalysis }: An
             {(results?.statistic != null || results?.p_value != null || results?.degrees_of_freedom != null) && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Omnibus Summary</CardTitle>
+                  <CardTitle className="text-xl">Omnibus Summary</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="rounded-md border overflow-x-auto">
-                    <table className="w-full text-sm text-left">
+                    <table className="w-full text-base text-left tabular-nums whitespace-nowrap">
                       <thead className="bg-muted/50 text-muted-foreground">
                         <tr>
                           <th className="px-4 py-2 font-medium">Metric</th>
@@ -163,11 +170,11 @@ export function AnalysisResultsView({ analysis, workbook, onUpdateAnalysis }: An
             {results?.effect_size && Object.keys(results.effect_size).length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Effect Size</CardTitle>
+                  <CardTitle className="text-xl">Effect Size</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="rounded-md border overflow-x-auto">
-                    <table className="w-full text-sm text-left">
+                    <table className="w-full text-base text-left">
                       <thead className="bg-muted/50 text-muted-foreground">
                         <tr>
                           <th className="px-4 py-2 font-medium">Measure</th>
@@ -197,34 +204,41 @@ export function AnalysisResultsView({ analysis, workbook, onUpdateAnalysis }: An
           {hasPostHocs && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Multiple Comparisons</CardTitle>
+                <CardTitle className="text-xl">Multiple Comparisons</CardTitle>
                 <CardDescription>Method: {results.post_hocs.method}</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="rounded-md border overflow-x-auto">
-                  <table className="w-full text-sm text-left">
-                    <thead className="bg-muted/50 text-muted-foreground">
+                <div className="rounded-md border overflow-x-auto max-h-[400px]">
+                  <table className="w-full text-base text-left">
+                    <thead className="bg-muted text-muted-foreground sticky top-0 z-10 shadow-sm">
                       <tr>
-                        <th className="px-4 py-2 font-medium">Comparison</th>
-                        <th className="px-4 py-2 font-medium text-right">Mean Diff</th>
-                        <th className="px-4 py-2 font-medium text-right">Adjusted P Value</th>
-                        <th className="px-4 py-2 font-medium text-center">Significant?</th>
+                        <th className="px-4 py-3 font-semibold">Comparison</th>
+                        <th className="px-4 py-3 font-semibold text-right">Mean Diff</th>
+                        <th className="px-4 py-3 font-semibold text-right">95% CI of Diff</th>
+                        <th className="px-4 py-3 font-semibold text-right">Adjusted P Value</th>
+                        <th className="px-4 py-3 font-semibold text-center">Significant?</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">
-                      {results.post_hocs.comparisons.map((comp: any, i: number) => (
-                        <tr key={i} className="hover:bg-muted/30">
-                          <td className="px-4 py-2 font-medium">{comp.group1} vs {comp.group2}</td>
-                          <td className="px-4 py-2 text-right">{comp.mean_diff !== undefined ? comp.mean_diff?.toFixed(4) : "-"}</td>
-                          <td className="px-4 py-2 text-right">{comp.p_value < 0.0001 ? "< 0.0001" : comp.p_value?.toFixed(4)}</td>
-                          <td className="px-4 py-2 text-center">
-                            {comp.significant ? <span className="text-green-600 font-bold">Yes</span> : <span className="text-muted-foreground">No</span>}
-                          </td>
-                        </tr>
-                      ))}
+                      {results.post_hocs.comparisons.map((comp: any, i: number) => {
+                        const isSignificant = comp.significant || comp.p_value <= 0.05;
+                        return (
+                          <tr key={i} className={`hover:bg-muted/50 transition-colors ${isSignificant ? 'bg-primary/5' : ''}`}>
+                            <td className="px-4 py-2.5 font-medium">{comp.group1} <span className="text-muted-foreground font-normal mx-1">vs</span> {comp.group2}</td>
+                            <td className="px-4 py-2.5 text-right font-mono text-[13px]">{comp.mean_diff !== undefined ? comp.mean_diff?.toFixed(4) : "-"}</td>
+                            <td className="px-4 py-2.5 text-right font-mono text-[13px] whitespace-nowrap">{comp.ci_lower != null && comp.ci_upper != null ? `[${comp.ci_lower.toFixed(4)}, ${comp.ci_upper.toFixed(4)}]` : "—"}</td>
+                            <td className={`px-4 py-2.5 text-right font-mono text-[13px] ${isSignificant ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
+                              {comp.p_value < 0.0001 ? "< 0.0001" : comp.p_value?.toFixed(4)}
+                            </td>
+                            <td className="px-4 py-2.5 text-center">
+                              {isSignificant ? <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400">Yes</span> : <span className="text-muted-foreground">No</span>}
+                            </td>
+                          </tr>
+                        );
+                      })}
                       {results.post_hocs.comparisons.length === 0 && (
                         <tr>
-                          <td colSpan={4} className="px-4 py-4 text-center text-muted-foreground">
+                          <td colSpan={5} className="px-4 py-4 text-center text-muted-foreground">
                             No comparisons selected or run.
                           </td>
                         </tr>

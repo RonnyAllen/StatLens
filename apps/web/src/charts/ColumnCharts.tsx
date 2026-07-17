@@ -56,8 +56,22 @@ export function parseSheetData(sheet: DataSheet) {
 
 export const PALETTES: Record<string, string[]> = {
   "okabe-ito": ["#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#000000"],
-  "viridis": ["#440154", "#414487", "#2A788E", "#22A884", "#7AD151", "#FDE725"],
-  "tableau": ["#4E79A7", "#F28E2B", "#E15759", "#76B7B2", "#59A14F", "#EDC949", "#AF7AA1", "#FF9DA7", "#9C755F", "#BAB0AB"]
+  "viridis":   ["#440154", "#414487", "#2A788E", "#22A884", "#7AD151", "#FDE725"],
+  "tableau":   ["#4E79A7", "#F28E2B", "#E15759", "#76B7B2", "#59A14F", "#EDC949", "#AF7AA1", "#FF9DA7", "#9C755F", "#BAB0AB"],
+  "brewer-bold": ["#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00", "#FFFF33", "#A65628", "#F781BF"],
+  "forest-dusk": ["#1B9E77", "#D95F02", "#7570B3", "#E7298A", "#66A61E", "#E6AB02", "#A6761D", "#666666"],
+  "duo-tone":  ["#A6CEE3", "#1F78B4", "#B2DF8A", "#33A02C", "#FB9A99", "#E31A1C", "#FDBF6F", "#FF7F00"],
+  "nature":    ["#E64B35", "#4DBBD5", "#00A087", "#3C5488", "#F39B7F", "#8491B4", "#91D1C2", "#DC0000"],
+  "lancet":    ["#00468B", "#ED0000", "#42B540", "#0099B4", "#925E9F", "#FDAF91", "#AD002A", "#ADB6B6"],
+  "jama":      ["#374E55", "#DF8F44", "#00A1D5", "#B24745", "#79AF97", "#6A6599", "#80796B"],
+  "grayscale": ["#000000", "#404040", "#666666", "#8C8C8C", "#B3B3B3", "#D9D9D9"],
+  "magma":     ["#000004", "#3B0F70", "#8C2981", "#DE4968", "#FE9F6D", "#FCFDBF"],
+  "cividis":   ["#00204D", "#31446B", "#666970", "#958F78", "#CAB969", "#FFEA46"],
+  "ocean":     ["#023E8A", "#0077B6", "#0096C7", "#00B4D8", "#48CAE4", "#90E0EF", "#ADE8F4", "#CAF0F8"],
+  "pastel":    ["#FFB3BA", "#FFDFBA", "#FFFFBA", "#BAFFC9", "#BAE1FF", "#E8BAFF", "#FFD1DC", "#C4E0F9"],
+  "neon":      ["#FF006E", "#FB5607", "#FFBE0B", "#8338EC", "#3A86FF", "#06D6A0", "#FFD166", "#EF476F"],
+  "earth":     ["#8B4513", "#CD853F", "#DEB887", "#556B2F", "#6B8E23", "#808000", "#BC8F8F", "#A0522D"],
+  "retro":     ["#264653", "#2A9D8F", "#E9C46A", "#F4A261", "#E76F51", "#606C38", "#DDA15E", "#BC6C25"],
 };
 
 export function BarErrorChart({ sheet, analysisResults, config, width, height }: ColumnChartsProps) {

@@ -1,10 +1,11 @@
 import React, { useMemo } from "react"
 import { scaleLinear } from "@visx/scale"
 import { Group } from "@visx/group"
-import { LinePath, Area } from "@visx/shape"
-import { curveStepAfter } from "@visx/curve"
+import { LinePath, Area, Circle } from "@visx/shape"
+import { curveStepAfter, curveLinear } from "@visx/curve"
 import { AxisLeft, AxisBottom } from "@visx/axis"
 import type { DataSheet, GraphConfig } from "@/types/workbook"
+import { PALETTES } from "./ColumnCharts"
 
 interface SurvivalChartProps {
   sheet: DataSheet
@@ -23,6 +24,7 @@ interface KMPoint {
   isCensored: boolean
   ciLower: number
   ciUpper: number
+  se: number
 }
 
 function calculateKM(times: number[], events: number[]): KMPoint[] {
@@ -31,7 +33,7 @@ function calculateKM(times: number[], events: number[]): KMPoint[] {
   let currentS = 1
   let atRisk = data.length
   let sumVar = 0
-  const result: KMPoint[] = [{ time: 0, survival: 1, nRisk: atRisk, nEvents: 0, nCensored: 0, isCensored: false, ciLower: 1, ciUpper: 1 }]
+  const result: KMPoint[] = [{ time: 0, survival: 1, nRisk: atRisk, nEvents: 0, nCensored: 0, isCensored: false, ciLower: 1, ciUpper: 1, se: 0 }]
   
   let i = 0
   while (i < data.length) {
@@ -56,7 +58,7 @@ function calculateKM(times: number[], events: number[]): KMPoint[] {
       const ciLower = Math.max(0, currentS - 1.96 * se)
       const ciUpper = Math.min(1, currentS + 1.96 * se)
       
-      result.push({ time: t, survival: currentS, nRisk: atRisk, nEvents: d, nCensored: c, isCensored: false, ciLower, ciUpper })
+      result.push({ time: t, survival: currentS, nRisk: atRisk, nEvents: d, nCensored: c, isCensored: false, ciLower, ciUpper, se })
     }
     
     if (c > 0) {
@@ -64,7 +66,7 @@ function calculateKM(times: number[], events: number[]): KMPoint[] {
       const se = currentS * Math.sqrt(sumVar)
       const ciLower = Math.max(0, currentS - 1.96 * se)
       const ciUpper = Math.min(1, currentS + 1.96 * se)
-      result.push({ time: t, survival: currentS, nRisk: atRisk, nEvents: 0, nCensored: c, isCensored: true, ciLower, ciUpper })
+      result.push({ time: t, survival: currentS, nRisk: atRisk, nEvents: 0, nCensored: c, isCensored: true, ciLower, ciUpper, se })
     }
     
     atRisk -= (d + c)
@@ -72,10 +74,7 @@ function calculateKM(times: number[], events: number[]): KMPoint[] {
   return result
 }
 
-const colorPalette = [
-  "#2563eb", "#dc2626", "#16a34a", "#9333ea", "#ea580c", 
-  "#0891b2", "#be123c", "#4f46e5", "#ca8a04", "#0f766e"
-]
+
 
 export function SurvivalChart({ sheet, config, width, height }: SurvivalChartProps) {
   const margin = { top: 40, right: 40, bottom: 60, left: 60 }
@@ -149,63 +148,109 @@ export function SurvivalChart({ sheet, config, width, height }: SurvivalChartPro
       <AxisBottom 
         scale={xScale} 
         top={innerHeight} 
-        label="Time" 
+        label={config.showXAxisTitle !== false ? (config.xAxisTitle ?? "Time") : ""} 
         stroke="#333" 
         tickStroke="#333"
-        labelProps={{ dy: 40, fill: '#333', fontSize: 14, textAnchor: 'middle' }}
+        labelProps={{ dy: 40, fill: '#333', fontSize: config.axisTitleFontSize ?? config.fontSize ?? 14, fontFamily: config.fontFamily, textAnchor: 'middle' }}
+        tickLabelProps={() => ({ fill: '#333', fontSize: config.axisLabelFontSize ?? config.fontSize ?? 12, fontFamily: config.fontFamily, textAnchor: 'middle' })}
       />
       <AxisLeft 
         scale={yScale} 
-        label="Probability of Survival" 
+        label={config.showYAxisTitle !== false ? (config.yAxisTitle ?? "Probability of Survival") : ""} 
         stroke="#333" 
         tickStroke="#333"
-        labelProps={{ dx: -40, fill: '#333', fontSize: 14, textAnchor: 'middle' }}
+        tickFormat={(d) => config.survivalShowAs === "percents" ? `${(d.valueOf() as number) * 100}%` : d.valueOf().toString()}
+        labelProps={{ dx: -40, fill: '#333', fontSize: config.axisTitleFontSize ?? config.fontSize ?? 14, fontFamily: config.fontFamily, textAnchor: 'middle' }}
+        tickLabelProps={() => ({ dx: -4, fill: '#333', fontSize: config.axisLabelFontSize ?? config.fontSize ?? 12, fontFamily: config.fontFamily, textAnchor: 'end', dy: 4 })}
       />
 
       {groupsData.results.map((grp, i) => {
-        const color = colorPalette[i % colorPalette.length]
+        const colors = PALETTES[config.palette || "okabe-ito"] || PALETTES["okabe-ito"]
+        const color = colors[i % colors.length]
         
-        const censoredPoints = grp.data.filter(d => d.isCensored)
+        const style = config.survivalStyle || "staircase-ticks";
+        const isStaircase = style === "staircase-ticks" || style === "staircase";
+        const isConnectedDots = style === "connected-dots";
+        const isDotsOnly = style === "dots-only";
         
+        const symbolsAt = config.survivalSymbolsAt || "censored";
+        const pointsToMark = symbolsAt === "all" ? grp.data : grp.data.filter(d => d.isCensored);
+        
+        const showArea = (config.errorBars === "ci95" || config.errorBars === "se");
+        const isSE = config.errorBars === "se";
+
         return (
           <Group key={grp.groupId}>
-            {config.errorBars && (
+            {showArea && !isDotsOnly && (
               <Area<KMPoint>
                 data={grp.data}
                 x={d => xScale(d.time) ?? 0}
-                y0={d => yScale(d.ciLower) ?? 0}
-                y1={d => yScale(d.ciUpper) ?? 0}
+                y0={d => isSE ? (yScale(Math.max(0, d.survival - d.se)) ?? 0) : (yScale(d.ciLower) ?? 0)}
+                y1={d => isSE ? (yScale(Math.min(1, d.survival + d.se)) ?? 0) : (yScale(d.ciUpper) ?? 0)}
                 fill={color}
                 fillOpacity={0.2}
-                curve={curveStepAfter}
+                curve={isStaircase ? curveStepAfter : curveLinear}
               />
             )}
-            <LinePath<KMPoint>
-              data={grp.data}
-              x={d => xScale(d.time) ?? 0}
-              y={d => yScale(d.survival) ?? 0}
-              stroke={color}
-              strokeWidth={2}
-              curve={curveStepAfter}
-            />
-            {/* Draw tick marks for censored events */}
-            {censoredPoints.map((pt, idx) => (
+            {!isDotsOnly && (
+              <LinePath<KMPoint>
+                data={grp.data}
+                x={d => xScale(d.time) ?? 0}
+                y={d => yScale(d.survival) ?? 0}
+                stroke={color}
+                strokeWidth={2}
+                curve={isStaircase ? curveStepAfter : curveLinear}
+              />
+            )}
+            
+            {/* Draw error bars if dots-only */}
+            {isDotsOnly && showArea && grp.data.map((pt, idx) => (
               <line
-                key={`censor-${grp.groupId}-${idx}`}
-                x1={(xScale(pt.time) ?? 0)}
-                x2={(xScale(pt.time) ?? 0)}
-                y1={(yScale(pt.survival) ?? 0) - 5}
-                y2={(yScale(pt.survival) ?? 0) + 5}
+                key={`err-${grp.groupId}-${idx}`}
+                x1={xScale(pt.time) ?? 0}
+                x2={xScale(pt.time) ?? 0}
+                y1={isSE ? (yScale(Math.max(0, pt.survival - pt.se)) ?? 0) : (yScale(pt.ciLower) ?? 0)}
+                y2={isSE ? (yScale(Math.min(1, pt.survival + pt.se)) ?? 0) : (yScale(pt.ciUpper) ?? 0)}
                 stroke={color}
                 strokeWidth={1.5}
+                strokeOpacity={0.5}
               />
             ))}
+
+            {/* Draw tick marks or dots for events */}
+            {style !== "staircase" && pointsToMark.map((pt, idx) => {
+              const cx = xScale(pt.time) ?? 0;
+              const cy = yScale(pt.survival) ?? 0;
+              if (style === "staircase-ticks") {
+                return (
+                  <line
+                    key={`mark-${grp.groupId}-${idx}`}
+                    x1={cx} x2={cx}
+                    y1={cy - 5} y2={cy + 5}
+                    stroke={color}
+                    strokeWidth={1.5}
+                  />
+                );
+              } else {
+                return (
+                  <Circle
+                    key={`mark-${grp.groupId}-${idx}`}
+                    cx={cx} cy={cy} r={pt.isCensored ? 3 : 4}
+                    fill={pt.isCensored ? "none" : color}
+                    stroke={color}
+                    strokeWidth={1.5}
+                  />
+                );
+              }
+            })}
             
             {/* Legend Item */}
-            <Group left={innerWidth - 120} top={i * 20}>
-              <line x1={0} x2={20} y1={0} y2={0} stroke={color} strokeWidth={2} />
-              <text x={30} y={4} fontSize={12} fill="#333" alignmentBaseline="middle">{grp.name}</text>
-            </Group>
+            {(config.showLegend !== false) && (
+              <Group left={innerWidth - 120} top={i * 20}>
+                <line x1={0} x2={20} y1={0} y2={0} stroke={color} strokeWidth={2} />
+                <text x={30} y={4} fontSize={config.legendFontSize ?? config.fontSize ?? 12} fontFamily={config.fontFamily} fill="#333" alignmentBaseline="middle">{grp.name}</text>
+              </Group>
+            )}
           </Group>
         )
       })}

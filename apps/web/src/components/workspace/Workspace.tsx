@@ -258,25 +258,25 @@ export function Workspace() {
         </div>
         
         {/* Workspace Main Area */}
-        <div className="flex-1 flex flex-col p-6 h-full">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold">{activeSheet ? activeSheet.name : workbook.name}</h2>
+        <div className="flex-1 flex flex-col p-4 min-h-0">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xl font-bold truncate pr-4">{activeSheet ? activeSheet.name : workbook.name}</h2>
             {activeSheet && (
               <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg">
                 <button
-                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${viewMode === "data" ? "bg-background shadow-sm" : "text-muted-foreground hover:bg-muted"}`}
+                  className={`px-3 py-1.5 text-base font-medium rounded-md transition-colors ${viewMode === "data" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 shadow-sm" : "text-muted-foreground hover:bg-muted"}`}
                   onClick={() => setViewMode("data")}
                 >
                   Data
                 </button>
                 <button
-                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${viewMode === "analyze" ? "bg-background shadow-sm" : "text-muted-foreground hover:bg-muted"}`}
+                  className={`px-3 py-1.5 text-base font-medium rounded-md transition-colors ${viewMode === "analyze" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300 shadow-sm" : "text-muted-foreground hover:bg-muted"}`}
                   onClick={() => setViewMode("analyze")}
                 >
                   Analyze
                 </button>
                 <button
-                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${viewMode === "graph" ? "bg-background shadow-sm" : "text-muted-foreground hover:bg-muted"}`}
+                  className={`px-3 py-1.5 text-base font-medium rounded-md transition-colors ${viewMode === "graph" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 shadow-sm" : "text-muted-foreground hover:bg-muted"}`}
                   onClick={() => {
                     setViewMode("graph")
                     if (!activeGraphId || workbook.graphs.find(g => g.id === activeGraphId)?.sheetId !== activeSheet.id) {
@@ -337,7 +337,7 @@ export function Workspace() {
                 <div className={`flex-1 flex flex-col relative h-full ${viewMode === "graph" ? "" : "hidden"}`}>
                   {activeGraphId && workbook.graphs.find(g => g.id === activeGraphId) ? (
                     <div className="flex-1 flex overflow-hidden">
-                      <div className="flex-1 p-4 overflow-auto min-w-0">
+                      <div className="flex-1 p-4 overflow-auto min-w-0 dark:[&_svg]:invert-[0.85] dark:[&_svg]:hue-rotate-180 transition-all duration-300">
                         <GraphEngine 
                           graph={workbook.graphs.find(g => g.id === activeGraphId)!}
                           sheet={workbook.sheets.find(s => s.id === workbook.graphs.find(g => g.id === activeGraphId)?.sheetId)!}
@@ -346,7 +346,7 @@ export function Workspace() {
                       </div>
                       
                       <div 
-                        className={`relative border-l transition-all duration-300 ease-in-out ${isGraphSettingsOpen ? 'w-full md:w-80' : 'w-0'}`}
+                        className={`relative border-l transition-all duration-300 ease-in-out ${isGraphSettingsOpen ? 'w-full md:w-72' : 'w-0'}`}
                       >
                         <button
                           className={`absolute top-4 h-8 w-8 rounded-full shadow-sm z-50 bg-background flex items-center justify-center border transition-all ${isGraphSettingsOpen ? '-left-4' : '-left-10'}`}
@@ -404,13 +404,18 @@ export function Workspace() {
                               background: "transparent",
                               significanceScale: "standard",
                               showNsBrackets: true,
+                              showPostHocCaption: true,
                               showXAxisTitle: true,
                               showYAxisTitle: true,
                               theme: "system",
                               fontFamily: "Arial, sans-serif",
-                              fontSize: 12,
-                              showLegend: false,
-                              pointSize: 3
+                              fontSize: 14,
+                              pointSize: 4,
+                              errorBars: "se",
+                              survivalShowAs: "fractions",
+                              survivalSymbolsAt: "censored",
+                              survivalStyle: "staircase-ticks",
+                              showLegend: false
                             }
                           }
                           updateWorkbook(prev => ({ ...prev, graphs: [...prev.graphs, newGraph] }))

@@ -42,7 +42,7 @@ export function DataTableChooser({ open, onOpenChange, onSelect }: DataTableChoo
             {TABLE_TYPES.map(def => (
               <div key={def.type} className="border rounded-lg p-6 flex flex-col">
                 <h3 className="font-bold text-lg mb-2">{def.name}</h3>
-                <p className="text-muted-foreground text-sm flex-1 mb-6">
+                <p className="text-muted-foreground text-base flex-1 mb-6">
                   {def.description}
                 </p>
                 <div className="mt-auto space-y-4">

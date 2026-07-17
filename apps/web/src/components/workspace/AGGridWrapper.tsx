@@ -295,10 +295,24 @@ export function AGGridWrapper({ sheet, onUpdate }: AGGridWrapperProps) {
       columnBorder: true,
       headerColumnBorder: true,
       headerColumnBorderHeight: "100%",
+      fontSize: 18,
+      headerHeight: 54,
+      rowHeight: 54,
     }
-    return isDark 
-      ? themeQuartz.withPart(colorSchemeDark).withParams(baseParams)
-      : themeQuartz.withParams(baseParams)
+    
+    if (isDark) {
+      return themeQuartz.withPart(colorSchemeDark).withParams({
+        ...baseParams,
+        backgroundColor: "#000000",
+        foregroundColor: "#f8fafc",
+        headerBackgroundColor: "#020202",
+        headerTextColor: "#94a3b8",
+        oddRowBackgroundColor: "#020202",
+        borderColor: "#1e293b",
+        wrapperBorderRadius: "0px",
+      })
+    }
+    return themeQuartz.withParams(baseParams)
   }, [theme])
 
   // Custom Selection Engine
