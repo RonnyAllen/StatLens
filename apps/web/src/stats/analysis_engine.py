@@ -2061,22 +2061,40 @@ def run():
                     if post_hoc_test != "none" and post_hoc_family != "none":
                         report += f"\n### Multiple Comparisons (Holm-Bonferroni adjusted)\n\n"
                         try:
+                            # Use the SAME subject model as the main table above. Passing
+                            # subject='Subject' (the row index) leaves every subject with a
+                            # single row-factor level: the RM path then raises "Columns must
+                            # have at least two unique values" and the Mixed path silently
+                            # emits nan p-values into the comparison table.
                             if test_id == "Mixed-effects ANOVA":
-                                pw = pg.pairwise_tests(data=df_long, dv='Value', between=factor1_col, within='Factor2', subject='Subject', padjust='holm')
+                                pw = pg.pairwise_tests(data=_rm_d, dv='Value', between='Factor2',
+                                                       within=factor1_col, subject='_Subj', padjust='holm')
                             else:
-                                pw = pg.pairwise_tests(data=df_long, dv='Value', within=[factor1_col, 'Factor2'], subject='Subject', padjust='holm')
+                                pw = pg.pairwise_tests(data=_rm_d, dv='Value', within=[factor1_col, 'Factor2'],
+                                                       subject='_Subj', padjust='holm')
                             
                             report += "| Contrast | F1 | A | B | p-unc | p-adj |\n"
                             report += "|---|---|---|---|---|---|\n"
+                            # pingouin 0.5.x names these 'p-unc'/'p-corr'; 0.6.x renamed them
+                            # to 'p_unc'/'p_corr'. Every other p-read in this engine resolves
+                            # the column defensively -- do the same here so a future version
+                            # bump degrades loudly instead of silently printing nan.
+                            _pu = next((c for c in ['p-unc', 'p_unc', 'p-val', 'p_val'] if c in pw.columns), None)
+                            _pc = next((c for c in ['p-corr', 'p_corr', 'p-adjust', 'p_adjust'] if c in pw.columns), None)
+                            if _pu is None:
+                                raise KeyError(
+                                    "pingouin pairwise_tests returned no uncorrected p column "
+                                    f"(got {list(pw.columns)}) -- refusing to report nan comparisons.")
                             for _, r in pw.iterrows():
                                 contrast = r.get('Contrast', '')
                                 f1 = r.get(factor1_col, r.get('F1', '-'))
                                 a = r.get('A', '')
                                 b = r.get('B', '')
-                                punc = r.get('p-unc', np.nan)
-                                padj = r.get('p-corr', punc)
+                                punc = r.get(_pu, np.nan)
+                                padj = r.get(_pc, punc) if _pc else punc
                                 p_str = format_p_value(padj)
-                                report += f"| {contrast} | {f1} | {a} | {b} | {punc:.4f} | {p_str} |\n"
+                                punc_str = f"{punc:.4f}" if isinstance(punc, float) and not pd.isna(punc) else "-"
+                                report += f"| {contrast} | {f1} | {a} | {b} | {punc_str} | {p_str} |\n"
                         except Exception as epw:
                             report += f"\nCould not compute multiple comparisons: {str(epw)}\n"
                             
