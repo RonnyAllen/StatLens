@@ -3,16 +3,16 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Live](https://img.shields.io/badge/live-ronnyallen.github.io%2FStatLens-brightgreen)](https://ronnyallen.github.io/StatLens/)
 
-**Statistical analysis and publication-ready graphs, in your browser.**
+**A free, browser-only statistics tool for the whole analysis loop — from raw data to a publication-quality figure.**
 
 ### → **[Try it: ronnyallen.github.io/StatLens](https://ronnyallen.github.io/StatLens/)**
 
-StatLens runs a real Python scientific stack — NumPy, SciPy, statsmodels, pingouin, lifelines — *inside your browser* via [Pyodide](https://pyodide.org) and WebAssembly. 70+ statistical tests, eight typed data table types, and charts with automatic significance brackets.
+StatLens runs a real Python scientific stack — NumPy, SciPy, statsmodels, pingouin, lifelines — *inside your browser* via [Pyodide](https://pyodide.org) and WebAssembly. ~45 statistical tests, eight typed data table types, and 12 chart types with automatic significance brackets.
 
 Nothing to install. No server. Your workbooks are saved to your own Google Drive.
 
 > **Statistical correctness is the top priority; UX polish is second.**
-> 44 of the implemented analyses are pinned to golden reference values from SciPy, statsmodels, pingouin, and R.
+> 44 analyses are pinned to golden reference values from SciPy, statsmodels, pingouin, and R — and re-verified in CI on every push.
 
 ---
 
@@ -20,6 +20,9 @@ Nothing to install. No server. Your workbooks are saved to your own Google Drive
 
 - [Why](#why)
 - [Features](#features)
+- [What goes in which table](#what-goes-in-which-table)
+- [Charts](#charts)
+- [Coming soon](#coming-soon)
 - [How it works](#how-it-works)
 - [Correctness](#correctness)
 - [Privacy & data](#privacy--data)
@@ -42,83 +45,57 @@ Statistics software tends to be expensive, desktop-bound, or both. StatLens does
 
 ## Features
 
-### Data tables
+- **8 data-table types** — XY, Column, Grouped, Contingency, Survival, Parts of Whole, Multiple Variables, Nested
+- **Spreadsheet grid** with multi-cell selection, Excel copy/paste, and 50-step undo/redo
+- **Descriptive statistics with assumption checks** — Shapiro-Wilk normality, Levene equal variance
+- **A test recommender that reads those assumptions** — with manual override
+- **~45 statistical tests** (see [the table guide](#what-goes-in-which-table))
+- **One- and two-tailed options** for t-tests and Mann-Whitney
+- **Post-hoc tests** — Tukey, Dunnett, Dunnett's T3, Games-Howell, Dunn, Bonferroni, Šídák, Holm-Šídák — with adjusted p-values and confidence intervals
+- **12 chart types** with significance brackets and asterisks
+- **Publication export** — 600-DPI PNG (correct DPI metadata, embedded fonts) and SVG
+- **Google Drive save/load**, light and dark themes
 
-Eight typed table types, each of which determines which analyses are offered:
+An in-app [About page](https://ronnyallen.github.io/StatLens/about) carries the same guide, kept verified against the engine.
 
-| Table type | Use for |
-|---|---|
-| **XY** | Dose-response, kinetics, regression, correlation |
-| **Column** | Group comparisons (t-tests, ANOVA, non-parametrics) |
-| **Grouped** | Two-way / mixed / repeated-measures designs |
-| **Contingency** | 2×2 and R×C count data |
-| **Survival** | Kaplan-Meier, log-rank, hazard ratios |
-| **Parts of Whole** | Binomial, chi-square goodness of fit |
-| **Multiple Variables** | Multiple regression, PCA, correlation matrices |
-| **Nested** | Nested t-test / nested ANOVA |
+---
 
-Sub-column formats include replicates, mean ± SD (n), and mean ± SEM (n). The grid features a custom multi-cell selection engine, infinite undo/redo, and seamless copy-paste directly from Excel or Prism.
+## What goes in which table
 
-### Analyses
+The table type you pick determines which analyses are offered.
 
-**70 analyses** are implemented and runtime-audited (see [`docs/AUDIT_MATRIX.md`](docs/AUDIT_MATRIX.md)).
+| Table | Use when | Example | Tests | Post hoc |
+|---|---|---|---|---|
+| **Column** | Comparing groups on one measurement | Control / Drug A / Drug B tumour volumes | One-sample t, Unpaired t (Student's), Welch's t, Paired t, Mann-Whitney, Wilcoxon, Sign test, Kolmogorov-Smirnov, One-way ANOVA, Welch's ANOVA, Brown-Forsythe, Repeated-Measures ANOVA, Kruskal-Wallis, Friedman | Tukey, Dunnett (vs control), Dunnett's T3, Games-Howell, Dunn, Bonferroni, Šídák, Holm-Šídák |
+| **XY** | One variable measured against another | Dose vs response; time vs signal | Pearson, Spearman, Simple linear regression, Nonlinear curve fitting (exponential, Michaelis-Menten, 4PL, Gaussian, polynomial, Boltzmann), Deming regression, Simple logistic regression, Area under curve, LOWESS, Spline, Smooth, Integrate, Differentiate | — |
+| **Grouped** | Two factors at once | Drug × Dose on blood pressure | Two-way ANOVA (Type III), Repeated-Measures two-way, Mixed-effects, ART ANOVA (non-parametric) | Tukey on marginal means |
+| **Contingency** | Counts in categories | Exposed / Unexposed × Case / Control | Chi-square (± Yates), Fisher's exact, McNemar's, Odds and risk ratios, Diagnostic (sensitivity / specificity) | — |
+| **Survival** | Time until an event | Days to relapse by treatment arm | Kaplan-Meier, Log-rank (Mantel-Cox), Gehan-Breslow-Wilcoxon, Hazard ratios, Cox regression | Pairwise log-rank (Holm) |
+| **Parts of Whole** | One whole split into parts | Cell counts per phenotype | Chi-square goodness of fit, Binomial test | — |
+| **Multiple Variables** | Many variables per subject | Age, BMI, dose, response per patient | Correlation matrix, Multiple linear regression, Multiple logistic regression, Poisson regression, PCA, Three-way ANOVA | — |
+| **Nested** | Subsamples within groups | 3 wells per animal, 4 animals per group | Nested t-test / nested one-way ANOVA | Tukey |
 
-<details>
-<summary><b>Column comparisons</b></summary>
+Analyses report effect sizes (Cohen's d, eta², mean differences), confidence intervals, and degrees of freedom, alongside a Markdown results report.
 
-One-sample / unpaired / paired t-tests · Welch's t-test · Mann-Whitney · Wilcoxon matched-pairs signed rank · One-sample Wilcoxon · Sign tests (one-sample, paired) · Ordinary one-way ANOVA · Welch's ANOVA · Brown-Forsythe ANOVA · Repeated-measures ANOVA · Kruskal-Wallis · Friedman · Kolmogorov-Smirnov
-</details>
+---
 
-<details>
-<summary><b>Grouped / factorial designs</b></summary>
+## Charts
 
-Two-way ANOVA (incl. Type III unbalanced) · Repeated-measures two-way ANOVA · Mixed-effects ANOVA · Nested t-test / nested ANOVA · ART ANOVA (aligned rank transform, parametric & non-parametric)
-</details>
+Bar + error bars · Box & whisker · Violin · Raincloud · Scatter · Strip · Jitter · Beeswarm · Horizontal box · Range / dumbbell · CI forest · Kaplan-Meier step
 
-<details>
-<summary><b>Post hoc tests</b></summary>
+All support significance brackets and asterisks, computed and laid out automatically. Error bars (SD / SEM / CI) and regression overlays with confidence bands. Light/dark theme, 15 bundled font families.
 
-Tukey HSD · Dunnett's multiple comparisons test · Dunnett's T3 · Games-Howell · Šidák / Bonferroni corrections · control-vs-others and specific-pairs comparison schemes. The selection logic is documented in [`docs/Choosing Post Hoc Tests.md`](docs/).
-</details>
+**Export:** 600-DPI PNG with correct DPI metadata and embedded fonts, or SVG.
 
-<details>
-<summary><b>Regression & curve fitting</b></summary>
+---
 
-Simple & multiple linear regression · Simple & multiple logistic regression · Poisson regression · Deming regression · Nonlinear curve fitting (with AICc model comparison) · LOWESS · Spline fitting · Smoothing · Differentiate · Integrate · Area under curve · Interpolation of unknowns
-</details>
+## Coming soon
 
-<details>
-<summary><b>Contingency & diagnostics</b></summary>
-
-Chi-square (± Yates' correction) · Fisher's exact · McNemar's · Binomial · Chi-square goodness of fit · Odds ratio (incl. Haldane correction) · Relative risk · Sensitivity / specificity
-</details>
-
-<details>
-<summary><b>Survival</b></summary>
-
-Kaplan-Meier (with median survival & CI) · Log-rank (Mantel-Cox) · Gehan-Breslow-Wilcoxon · Hazard ratios · Pairwise log-rank with Bonferroni/Šidák
-</details>
-
-<details>
-<summary><b>Multivariate</b></summary>
-
-Principal component analysis (PCA) · Correlation matrices · Pearson & Spearman correlation (with exact p-values for small n)
-</details>
-
-Analyses report effect sizes (Cohen's d, eta², mean differences), confidence intervals, and degrees of freedom, alongside a Markdown results report. Tests allow precise configuration including one-tailed/two-tailed options, interaction terms, and sphericity corrections (Greenhouse-Geisser, Huynh-Feldt).
-
-### Graphs
-
-- Column/bar, XY, survival (step curves with censor ticks), and horizontal category charts
-- Scatter overlays: **beeswarm**, **jitter**, **violin** (KDE), **box-and-whisker**
-- Error bars (SD / SEM / CI), regression overlays with confidence bands
-- **Significance brackets** computed and laid out automatically
-- **AMOLED Dark Mode** with auto-inverting chart colours, 15 bundled font families, and **12 chart colour palettes** (including colourblind-safe and journal styles)
-- Export to **PNG** and **SVG**
-
-### Assumption checking & Recommender
-
-Normality, equal-variance, and outlier diagnostics run alongside analyses, with plain-language verdicts ("The data appears to be normally distributed"). A built-in decision tree recommends the most appropriate statistical test based on your data's characteristics.
+- Excel / CSV export of data and results tables (today only graphs export)
+- Guided Analysis wizard — a step-by-step walkthrough
+- PDF / EPS graph export
+- More chart types — grouped bar, connected / before-after line, nested plot, pie / donut, heatmap
+- Offline / local-file storage
 
 ---
 
@@ -140,7 +117,7 @@ StatLens is a **100% client-side single-page app**. Nothing runs on a server.
 │                   ├── numpy, pandas, scipy                    │
 │                   ├── statsmodels, scikit-learn               │
 │                   └── pingouin, scikit-posthocs, lifelines    │
-│                   └── analysis_engine.py  (2.8k lines)        │
+│                   └── analysis_engine.py  (3.1k lines)        │
 │                                                              │
 └──────────────┬───────────────────────────────────────────────┘
                │  HTTPS
@@ -150,7 +127,7 @@ StatLens is a **100% client-side single-page app**. Nothing runs on a server.
 
 **The parts that matter:**
 
-1. **The stats engine is real Python.** [`src/stats/analysis_engine.py`](apps/web/src/stats/analysis_engine.py) (~2,800 lines) is the single source of statistical truth. It executes under Pyodide inside a Web Worker, so heavy analyses never block the UI.
+1. **The stats engine is real Python.** [`src/stats/analysis_engine.py`](apps/web/src/stats/analysis_engine.py) (~3,100 lines) is the single source of statistical truth. It executes under Pyodide inside a Web Worker, so heavy analyses never block the UI.
 2. **Pyodide loads from a CDN at runtime.** The Python runtime and scientific packages are *not* in the JS bundle. First load pulls tens of MB and takes a while — the header shows `Loading engine…` → `Engine ready`. After that the browser caches it.
 3. **Optional packages install via micropip** (pingouin, scikit-posthocs, lifelines) behind defensive imports — if one fails to install, the engine still loads and everything that doesn't need it still works.
 4. **No `SharedArrayBuffer`**, so no COOP/COEP headers are required and the whole app can be served as plain static files.
@@ -169,7 +146,7 @@ StatLens is a **100% client-side single-page app**. Nothing runs on a server.
 | Stats | Pyodide 0.26.1 → NumPy, pandas, SciPy, statsmodels, scikit-learn, pingouin, scikit-posthocs, lifelines |
 | Auth | Google Identity Services |
 | Lint | oxlint |
-| Tests | vitest |
+| Tests | vitest + a Python-side CI matrix |
 
 ---
 
@@ -181,11 +158,20 @@ The project's central rule, from [`Agents.md`](Agents.md):
 
 What that looks like in practice:
 
-- [`apps/web/src/stats/__tests__/golden_values.json`](apps/web/src/stats/__tests__/golden_values.json) — **44 analyses** pinned to reference outputs
-- [`apps/web/src/stats/__tests__/reference_R/`](apps/web/src/stats/__tests__/reference_R/) — the R scripts that generated those expected values
+- [`golden_values.json`](apps/web/src/stats/__tests__/golden_values.json) — **44 analyses** pinned to reference outputs
+- [`reference_R/`](apps/web/src/stats/__tests__/reference_R/) — the R scripts that generated those expected values
 - `run_audit.test.ts` — boots Pyodide and runs the **real engine** against the golden values, not a mock
 - `charts/__tests__/geometry.test.ts` — chart geometry maths
 - [`docs/AUDIT_MATRIX.md`](docs/AUDIT_MATRIX.md) — per-analysis status: does it run, is it golden-tested, does it go through the engine path
+
+### Statistics CI
+
+[`.github/workflows/stats-tests.yml`](.github/workflows/stats-tests.yml) runs on every push and PR, against a Python stack **pinned to match what the Pyodide worker installs** — so CI and the browser can't silently diverge:
+
+- **Golden-value verification** — the reference numbers still hold
+- **Post-hoc contract matrix** — including a Dunnett determinism guard
+- **UI ↔ engine string boundary contract** — catches the class of bug where the UI asks for one test and the engine quietly runs another
+- **Typecheck** — full `tsc` pass
 
 An analysis without a reference test is considered unfinished.
 
@@ -207,8 +193,9 @@ An analysis without a reference test is considered unfinished.
 StatLens/
 ├── apps/web/src/
 │   ├── App.tsx               # routes, header, engine bootstrap
+│   ├── pages/AboutPage.tsx   # in-app about + usage guide
 │   ├── stats/
-│   │   ├── analysis_engine.py    # ★ all statistics live here (~2.8k lines)
+│   │   ├── analysis_engine.py    # ★ all statistics live here (~3.1k lines)
 │   │   ├── pyodide.worker2.ts    # Web Worker: boots Pyodide, runs the engine
 │   │   ├── engine.ts             # main-thread client for the worker
 │   │   └── __tests__/            # golden-value oracle tests
@@ -224,6 +211,7 @@ StatLens/
 │   ├── data/                     # auth, Drive API, sheet templates
 │   ├── lib/exportGraph.ts        # PNG / SVG export
 │   └── types/workbook.ts         # zod schemas for the workbook format
+├── apps/web/scratch/         # Python contract + verification scripts (run by CI)
 ├── docs/
 │   ├── PRD.md                    # product requirements
 │   ├── AUDIT_MATRIX.md           # every analysis + its runtime/golden status
@@ -236,9 +224,10 @@ StatLens/
 
 ## Acknowledgements
 
-Built on the shoulders of [Pyodide](https://pyodide.org), [SciPy](https://scipy.org), [statsmodels](https://www.statsmodels.org), [pingouin](https://pingouin-stats.org), [scikit-posthocs](https://scikit-posthocs.readthedocs.io), [lifelines](https://lifelines.readthedocs.io), [visx](https://airbnb.io/visx), and [ag-grid](https://www.ag-grid.com).
+Built on the shoulders of [Pyodide](https://pyodide.org), [SciPy](https://scipy.org), [statsmodels](https://www.statsmodels.org), [pingouin](https://pingouin-stats.org), [scikit-posthocs](https://scikit-posthocs.readthedocs.io), [lifelines](https://lifelines.readthedocs.io), [visx](https://airbnb.io/visx), and [AG Grid](https://www.ag-grid.com).
+
+Built with [Claude](https://claude.ai) and [Antigravity](https://antigravity.google).
 
 ## License
 
 [MIT](LICENSE) — free to use, modify, and distribute; just keep the copyright notice.
-
