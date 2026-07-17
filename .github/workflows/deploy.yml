@@ -30,9 +30,12 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
 
       - name: Install dependencies
         run: npm ci
@@ -49,6 +52,9 @@ jobs:
       # is missing locally. Runs on Ubuntu, so `cp` is fine (you never run this on Windows).
       - name: Ensure SPA 404 fallback exists
         run: cp dist/index.html dist/404.html
+
+      - name: Bypass Jekyll processing
+        run: touch dist/.nojekyll
 
       # FAIL FAST: if the base path is wrong, the deployed site is a blank white page.
       # Better to fail here than to debug a white screen after deploying.

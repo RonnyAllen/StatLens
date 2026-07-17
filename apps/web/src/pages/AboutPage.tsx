@@ -335,27 +335,46 @@ export function AboutPage() {
             <div>
               <h3 className="text-lg font-medium mb-3">Available now</h3>
               <div className="flex flex-wrap gap-2">
-                {CHARTS_AVAILABLE.map((c) => (
-                  <span
-                    key={c}
-                    className="rounded-full border bg-muted/40 px-4 py-1.5 text-lg text-muted-foreground"
-                  >
-                    {c}
-                  </span>
-                ))}
+                {CHARTS_AVAILABLE.map((c, i) => {
+                  const colors = [
+                    "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700/50",
+                    "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700/50",
+                    "bg-violet-100 text-violet-800 border-violet-300 dark:bg-violet-900/30 dark:text-violet-300 dark:border-violet-700/50",
+                    "bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-700/50",
+                    "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-700/50",
+                    "bg-cyan-100 text-cyan-800 border-cyan-300 dark:bg-cyan-900/30 dark:text-cyan-300 dark:border-cyan-700/50",
+                  ];
+                  return (
+                    <span
+                      key={c}
+                      className={`rounded-full border px-4 py-1.5 text-lg font-medium shadow-sm transition-transform hover:scale-105 cursor-default ${colors[i % colors.length]}`}
+                    >
+                      {c}
+                    </span>
+                  );
+                })}
               </div>
             </div>
             <div>
               <h3 className="text-lg font-medium mb-3">Coming soon</h3>
               <div className="flex flex-wrap gap-2">
-                {CHARTS_SOON.map((c) => (
-                  <span
-                    key={c}
-                    className="rounded-full border border-dashed px-4 py-1.5 text-lg text-muted-foreground/70"
-                  >
-                    {c}
-                  </span>
-                ))}
+                {CHARTS_SOON.map((c, i) => {
+                  const colors = [
+                    "text-blue-600/80 border-blue-300/60 dark:text-blue-400/70 dark:border-blue-700/50 bg-blue-50/40 dark:bg-blue-900/10",
+                    "text-emerald-600/80 border-emerald-300/60 dark:text-emerald-400/70 dark:border-emerald-700/50 bg-emerald-50/40 dark:bg-emerald-900/10",
+                    "text-violet-600/80 border-violet-300/60 dark:text-violet-400/70 dark:border-violet-700/50 bg-violet-50/40 dark:bg-violet-900/10",
+                    "text-rose-600/80 border-rose-300/60 dark:text-rose-400/70 dark:border-rose-700/50 bg-rose-50/40 dark:bg-rose-900/10",
+                    "text-amber-600/80 border-amber-300/60 dark:text-amber-400/70 dark:border-amber-700/50 bg-amber-50/40 dark:bg-amber-900/10",
+                  ];
+                  return (
+                    <span
+                      key={c}
+                      className={`rounded-full border border-dashed px-4 py-1.5 text-lg font-medium cursor-default ${colors[i % colors.length]}`}
+                    >
+                      {c}
+                    </span>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -387,7 +406,7 @@ export function AboutPage() {
               href="https://github.com/RonnyAllen/StatLens"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-md border px-5 py-3 text-base font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+              className="inline-flex items-center gap-2 rounded-md border px-5 py-3 text-base font-medium text-zinc-800 dark:text-zinc-200 border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-colors shadow-sm"
             >
               <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
               Source code
@@ -397,7 +416,7 @@ export function AboutPage() {
               href="https://github.com/RonnyAllen/StatLens/issues"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-md border px-5 py-3 text-base font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+              className="inline-flex items-center gap-2 rounded-md border px-5 py-3 text-base font-medium text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-800/60 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors shadow-sm"
             >
               <Bug className="h-6 w-6" />
               Report an issue
