@@ -1883,7 +1883,18 @@ def run():
                                       var_name='Factor2', value_name='Value').dropna()
                     
                     if replicates > 1:
+                        # A SUBCOLUMN IS A SUBJECT. In a Grouped table the replicate index
+                        # identifies the same individual measured across every row and column
+                        # (Prism: "matched values are stacked into a subcolumn"). Keeping
+                        # Subject = row index gives every subject a single row-factor level,
+                        # which makes the repeated-measures design degenerate: pingouin then
+                        # returns SS=0, df=0 and no p column at all, and the engine silently
+                        # reports a table of NaN. Capture the replicate BEFORE stripping it.
+                        df_long['Replicate'] = df_long['Factor2'].apply(
+                            lambda x: str(x).rsplit('_', 1)[1] if '_' in str(x) else '1')
                         df_long['Factor2'] = df_long['Factor2'].apply(lambda x: str(x).rsplit('_', 1)[0])
+                    else:
+                        df_long['Replicate'] = '1'
                     
                     # Map column IDs back to user-friendly names
                     df_long['Factor2'] = df_long['Factor2'].map(base_col_id_to_name).fillna(df_long['Factor2'])
@@ -1985,9 +1996,20 @@ def run():
                     # Assume Subject is random effect, Factor2 is within, Factor1 is between (for Mixed) or both within (RM)
                     # For simplicity, if RM Two-way, both are within. If Mixed, one between one within.
                     if test_id == "Mixed-effects ANOVA":
-                        res = pg.mixed_anova(data=df_long, dv='Value', between=factor1_col, within='Factor2', subject='Subject')
+                        # Prism's layout: the COLUMN factor is between-subjects (different
+                        # subjects per column group) and the ROW factor is within-subjects
+                        # (each subject measured at every row). A subject is therefore one
+                        # subcolumn inside one column group.
+                        _rm_d = df_long.assign(
+                            _Subj=df_long['Factor2'].astype(str) + '__' + df_long['Replicate'].astype(str))
+                        res = pg.mixed_anova(data=_rm_d, dv='Value', between='Factor2',
+                                             within=factor1_col, subject='_Subj', correction=True)
                     else:
-                        res = pg.rm_anova(data=df_long, dv='Value', within=[factor1_col, 'Factor2'], subject='Subject', correction=True)
+                        # Both factors within-subject: subject = subcolumn index, shared
+                        # across every row and column.
+                        _rm_d = df_long.assign(_Subj=df_long['Replicate'].astype(str))
+                        res = pg.rm_anova(data=_rm_d, dv='Value', within=[factor1_col, 'Factor2'],
+                                          subject='_Subj', correction=True)
                         
                     report = f"A **{test_id}** was performed.\n\n"
                     table_header = "| Source | SS | DF | MS | F | p-value | np2 | eps |\n"
@@ -1996,11 +2018,17 @@ def run():
                     
                     anovaCorrection = options.get('transformOptions', {}).get('anovaCorrection', 'none')
                     
+                    # pingouin names the df columns 'ddof1'/'ddof2' for rm_anova and
+                    # 'DF1'/'DF2' for mixed_anova -- never plain 'DF'. row.get('DF', 0)
+                    # therefore always returned 0 and the table reported "0, 0" df next to
+                    # a correct F. Resolve the real column names once.
+                    _d1c = next((c for c in ['ddof1', 'DF1', 'DF'] if c in res.columns), None)
+                    _d2c = next((c for c in ['ddof2', 'DF2'] if c in res.columns), None)
                     for _, row in res.iterrows():
                         src = row['Source']
                         ss = row.get('SS', 0)
-                        df_val = row.get('DF', 0)
-                        df2_val = row.get('DF2', 0)
+                        df_val = row.get(_d1c, 0) if _d1c else 0
+                        df2_val = row.get(_d2c, 0) if _d2c else 0
                         ms = row.get('MS', 0)
                         f = row.get('F', 0)
                         
@@ -2015,8 +2043,20 @@ def run():
                             
                         np2 = row.get('np2', 0)
                         eps = row.get('eps', '')
+                        # A Geisser-Greenhouse p must be read against epsilon-adjusted df --
+                        # quoting a corrected p next to uncorrected df is the same defect
+                        # FIX6 removed from the one-way RM path.
+                        _gg_used = (anovaCorrection == "GG" and isinstance(eps, float)
+                                    and not pd.isna(eps) and 0 < eps < 1)
+                        if _gg_used:
+                            try:
+                                df_str = f"{float(df_val) * float(eps):.2f}, {float(df2_val) * float(eps):.2f} (GG)"
+                            except Exception:
+                                df_str = f"{df_val}, {df2_val}"
+                        else:
+                            df_str = f"{df_val}, {df2_val}"
                         if isinstance(eps, float): eps = f"{eps:.3f}"
-                        report += f"| {src} | {ss:.3f} | {df_val}, {df2_val} | {ms:.3f} | {f:.3f} | {p:.4f} | {np2:.3f} | {eps} |\n"
+                        report += f"| {src} | {ss:.3f} | {df_str} | {ms:.3f} | {f:.3f} | {p:.4f} | {np2:.3f} | {eps} |\n"
                         
                     if post_hoc_test != "none" and post_hoc_family != "none":
                         report += f"\n### Multiple Comparisons (Holm-Bonferroni adjusted)\n\n"
