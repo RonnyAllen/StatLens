@@ -98,9 +98,9 @@ export function computeChartLayout(input: ChartLayoutInput): ChartLayoutOutput {
   
   if (config.showYAxisTitle !== false) {
     const titleH = measureText("Mg", titleFont, fontFam).height;
-    leftMargin += titleH + GAP;
+    leftMargin += titleH + 20;
     // Y Axis title is usually rotated, offset from axis line
-    yAxisTitleX = maxTickWidth + GAP + titleH / 2;
+    yAxisTitleX = maxTickWidth + 20 + titleH / 2;
   }
   
   // Left margin needs a baseline pad for the axis line itself

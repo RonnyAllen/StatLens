@@ -1,3 +1,15 @@
+import type { DataSheet } from "@/types/workbook"
+import type { TestOptions } from "@/components/workspace/TestOptionsDialog"
+
+// The engine's Python run() returns a shape that genuinely varies per test_id (error |
+// descriptives | ANOVA table | post-hoc matrix | ...), so the RETURN type below stays
+// `any` on purpose -- only the INPUT payload is typed, which is what this task asks for.
+export interface RunEnginePayload {
+  sheet: DataSheet
+  entrypoint?: string
+  options?: TestOptions
+}
+
 export type WorkerResponse = {
   id: string
   type: "INIT_SUCCESS" | "SUCCESS" | "ERROR" | "progress"

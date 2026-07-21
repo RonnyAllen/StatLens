@@ -231,6 +231,7 @@ export function Sidebar({ workbook, onUpdate, activeSheetId, activeAnalysisId, a
           showPostHocCaption: true,
           showXAxisTitle: true,
           showYAxisTitle: true,
+          showGrid: true,
           theme: workbook.appTheme as any,
           fontFamily: "Arial, sans-serif",
           fontSize: 14,

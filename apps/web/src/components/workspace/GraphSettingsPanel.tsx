@@ -334,12 +334,12 @@ export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAn
             <input 
               type="checkbox" 
               id="showPoints"
-              checked={config.showPoints}
+              checked={config.showPoints ?? true}
               onChange={(e) => handleChange("showPoints", e.target.checked)}
             />
             <label htmlFor="showPoints" className="text-base font-medium">Show Individual Points</label>
           </div>
-          {config.showPoints && (
+          {(config.showPoints ?? true) && (
             <div className="flex flex-col gap-1.5 ml-6">
               <label className="text-xs font-medium">Point Size</label>
               <input 

@@ -407,6 +407,7 @@ export function Workspace() {
                               showPostHocCaption: true,
                               showXAxisTitle: true,
                               showYAxisTitle: true,
+                              showGrid: true,
                               theme: "system",
                               fontFamily: "Arial, sans-serif",
                               fontSize: 14,
