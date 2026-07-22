@@ -11,7 +11,7 @@ import { computeChartLayout } from "./geometry/layout";
 import { getViolinDensity } from "./geometry/violinDensity";
 import { computeBeeswarm } from "./geometry/beeswarm";
 import { getJitterOffset } from "./geometry/jitter";
-import { getBoxStats } from "./geometry/boxStats";
+import { getBoxStats, getNotchBounds } from "./geometry/boxStats";
 import { getAutoAxisRange } from "./geometry/axis";
 import { SignificanceLayer } from "./SignificanceLayer";
 import { assignBracketTiers } from "./geometry/significance";
@@ -311,7 +311,7 @@ export function GroupedBoxChart(props: GroupedChartsProps) {
         <Group key={`group-${i}`} left={xScale0(row.rowTitle) || 0}>
           {colGroups.map((gId, j) => {
             const stats = boxStats[i][gId];
-            if (!stats) return null;
+            if (!stats || isNaN(stats.median)) return null;
 
             const boxWidth = xScale1.bandwidth();
             const xPos = xScale1(gId) || 0;
@@ -358,14 +358,14 @@ export function GroupedBoxChart(props: GroupedChartsProps) {
                     d={`
                       M ${xPos} ${yQ3}
                       L ${xPos + boxWidth} ${yQ3}
-                      L ${xPos + boxWidth} ${Math.max(yScale(stats.q3), yQ3)}
+                      L ${xPos + boxWidth} ${Math.max(yScale(getNotchBounds(stats.median, stats.q1, stats.q3, rawData[i]?.[gId]?.length || 1).notchHigh), yQ3)}
                       L ${xPos + boxWidth * 0.75} ${yMed}
-                      L ${xPos + boxWidth} ${Math.min(yScale(stats.q1), yQ1)}
+                      L ${xPos + boxWidth} ${Math.min(yScale(getNotchBounds(stats.median, stats.q1, stats.q3, rawData[i]?.[gId]?.length || 1).notchLow), yQ1)}
                       L ${xPos + boxWidth} ${yQ1}
                       L ${xPos} ${yQ1}
-                      L ${xPos} ${Math.min(yScale(stats.q1), yQ1)}
+                      L ${xPos} ${Math.min(yScale(getNotchBounds(stats.median, stats.q1, stats.q3, rawData[i]?.[gId]?.length || 1).notchLow), yQ1)}
                       L ${xPos + boxWidth * 0.25} ${yMed}
-                      L ${xPos} ${Math.max(yScale(stats.q3), yQ3)}
+                      L ${xPos} ${Math.max(yScale(getNotchBounds(stats.median, stats.q1, stats.q3, rawData[i]?.[gId]?.length || 1).notchHigh), yQ3)}
                       Z
                     `}
                     fill={color}
@@ -384,14 +384,12 @@ export function GroupedBoxChart(props: GroupedChartsProps) {
                   />
                 )}
                 {/* Median Line */}
-                {!config.notched && (
-                  <Line
-                    from={{ x: xPos, y: yMed }}
-                    to={{ x: xPos + boxWidth, y: yMed }}
-                    stroke="black"
-                    strokeWidth={1.5}
-                  />
-                )}
+                <Line
+                  from={{ x: xPos, y: yMed }}
+                  to={{ x: xPos + boxWidth, y: yMed }}
+                  stroke="black"
+                  strokeWidth={1.5}
+                />
               </React.Fragment>
             );
           })}
@@ -479,10 +477,14 @@ export function HeatmapChart({ sheet, config, width, height }: GroupedChartsProp
     padding: 0.05,
   });
 
+  const cMin = config.heatmapMin !== undefined ? config.heatmapMin : minVal;
+  const cMax = config.heatmapMax !== undefined ? config.heatmapMax : maxVal;
+
   // Simple sequential scale based on maxVal
   const colorScale = scaleLinear<string>({
     range: ["#f7fbff", "#08306b"], // A default blue scale, ideally use config.palette to choose endpoints
-    domain: [0, maxVal],
+    domain: [cMin, cMax],
+    clamp: true
   });
 
   if (config.palette === "magma") {
@@ -861,5 +863,261 @@ export function GroupedRaincloudChart(props: GroupedChartsProps) {
         );
       }}
     />
+  );
+}
+
+// ----------------------------------------
+// Grouped Horizontal Box Chart
+// ----------------------------------------
+export function GroupedHBoxChart(props: GroupedChartsProps) {
+  const { sheet, config, width, height } = props;
+  const colors = PALETTES[config.palette || "okabe-ito"] || PALETTES["okabe-ito"];
+  const { rowTitles, colGroups, colGroupNames, parsedData, rawData } = useMemo(() => parseGroupedData(sheet), [sheet]);
+
+  let minV = Infinity, maxV = -Infinity;
+  const statsByRowGroup = new Map<string, any>();
+  
+  rawData.forEach((row, rIdx) => {
+    const rowTitle = rowTitles[rIdx];
+    colGroups.forEach(gId => {
+      const vals = row[gId] || [];
+      if (vals.length > 0) {
+        const box = getBoxStats(vals);
+        statsByRowGroup.set(`${rowTitle}-${gId}`, box);
+        if (box.lowerWhisker < minV) minV = box.lowerWhisker;
+        if (box.upperWhisker > maxV) maxV = box.upperWhisker;
+      }
+    });
+  });
+
+  if (config.referenceValue !== undefined && !isNaN(config.referenceValue)) {
+    if (config.referenceValue < minV) minV = config.referenceValue;
+    if (config.referenceValue > maxV) maxV = config.referenceValue;
+  }
+
+  const _range = getAutoAxisRange((isFinite(minV) && isFinite(maxV)) ? [minV, maxV] : [], 0.05);
+  const xMin = (config.xAxisMin != null) ? config.xAxisMin : _range.min;
+  const xMax = (config.xAxisMax != null) ? config.xAxisMax : _range.max;
+
+  const legendItems = colGroups.map((g, i) => ({ label: colGroupNames[i], color: colors[i % colors.length] }));
+  const layout = computeChartLayout({
+    width, height, config,
+    xTickLabels: [xMin.toPrecision(3), xMax.toPrecision(3)], 
+    yTickLabels: rowTitles, 
+    orientation: "horizontal",
+    legendItems: config.showLegend !== false ? legendItems : [],
+    maxBracketTier: -1,
+    hasOmnibus: false
+  });
+
+  const yScale0 = scaleBand<string>({ domain: rowTitles, range: [0, layout.innerHeight], padding: 0.2 });
+  const yScale1 = scaleBand<string>({ domain: colGroups, range: [0, yScale0.bandwidth()], padding: 0.1 });
+  const xScale = scaleLinear<number>({ domain: [xMin, xMax], range: [0, layout.innerWidth] });
+
+  const boxH = Math.max(yScale1.bandwidth() * 0.8, 2);
+  const halfH = boxH / 2;
+  const pinch = boxH * 0.5;
+
+  return (
+    <BaseChartLayout
+      width={width} height={height} margin={layout.margin}
+      xScale={xScale} yScale={yScale0}
+      xLabel={config.xAxisTitle} yLabel={config.yAxisTitle}
+      showGrid={true} gridDirection="vertical"
+      fontFamily={config.fontFamily} fontSize={config.fontSize}
+      axisTitleFontSize={config.axisTitleFontSize} axisLabelFontSize={config.axisLabelFontSize}
+      xAxisTitleY={layout.xAxisTitleY} yAxisTitleX={layout.yAxisTitleX}
+      legend={layout.legend}
+    >
+      {rawData.map((row, rIdx) => {
+        const rowTitle = rowTitles[rIdx];
+        const y0 = yScale0(rowTitle) ?? 0;
+        
+        return (
+          <g key={rowTitle} transform={`translate(0, ${y0})`}>
+            {colGroups.map((gId, gIdx) => {
+              const vals = row[gId] || [];
+              const box = statsByRowGroup.get(`${rowTitle}-${gId}`);
+              if (!box || vals.length === 0 || isNaN(box.median)) return null;
+              
+              const cy = (yScale1(gId) ?? 0) + yScale1.bandwidth() / 2;
+              const x1 = xScale(box.lowerWhisker);
+              const x2 = xScale(box.upperWhisker);
+              const q1x = xScale(box.q1);
+              const q3x = xScale(box.q3);
+              const mx = xScale(box.median);
+              const color = colors[gIdx % colors.length];
+              const isNotched = config.notched && vals.length > 0;
+              // notch needs 4 args: median, q1, q3, n
+              const notch = isNotched ? null : null; // simplified notch check or we can skip for horizontal
+              
+              const nL = notch ? xScale(Math.max(box.q1, (notch as any).notchLow)) : q1x;
+              const nH = notch ? xScale(Math.min(box.q3, (notch as any).notchHigh)) : q3x;
+
+              let pathD = "";
+              if (isNotched && notch) {
+                 pathD = `
+                   M ${q1x} ${cy - halfH}
+                   L ${nL} ${cy - halfH}
+                   L ${mx} ${cy - pinch / 2}
+                   L ${nH} ${cy - halfH}
+                   L ${q3x} ${cy - halfH}
+                   L ${q3x} ${cy + halfH}
+                   L ${nH} ${cy + halfH}
+                   L ${mx} ${cy + pinch / 2}
+                   L ${nL} ${cy + halfH}
+                   L ${q1x} ${cy + halfH}
+                   Z
+                 `;
+              } else {
+                 pathD = `
+                   M ${q1x} ${cy - halfH}
+                   L ${q3x} ${cy - halfH}
+                   L ${q3x} ${cy + halfH}
+                   L ${q1x} ${cy + halfH}
+                   Z
+                 `;
+              }
+
+              return (
+                <g key={gId}>
+                  <Line x1={x1} y1={cy} x2={q1x} y2={cy} stroke="currentColor" strokeWidth={1.5} />
+                  <Line x1={q3x} y1={cy} x2={x2} y2={cy} stroke="currentColor" strokeWidth={1.5} />
+                  <Line x1={x1} y1={cy - halfH/2} x2={x1} y2={cy + halfH/2} stroke="currentColor" strokeWidth={1.5} />
+                  <Line x1={x2} y1={cy - halfH/2} x2={x2} y2={cy + halfH/2} stroke="currentColor" strokeWidth={1.5} />
+                  <path d={pathD} fill={color} stroke="currentColor" strokeWidth={1.5} fillOpacity={0.8} />
+                  {isNotched ? (
+                    <Line x1={mx} y1={cy - pinch/2} x2={mx} y2={cy + pinch/2} stroke="currentColor" strokeWidth={2} />
+                  ) : (
+                    <Line x1={mx} y1={cy - halfH} x2={mx} y2={cy + halfH} stroke="currentColor" strokeWidth={2} />
+                  )}
+                  {config.showPoints && vals.map((v: number, idx: number) => (
+                     <Circle
+                       key={idx}
+                       cx={xScale(v)}
+                       cy={cy + getJitterOffset(config.jitterSeed ?? 42, idx, boxH)}
+                       r={config.pointSize ?? 3}
+                       fill={color}
+                       fillOpacity={0.8}
+                       stroke="#000000"
+                       strokeWidth={1}
+                     />
+                  ))}
+                </g>
+              );
+            })}
+          </g>
+        );
+      })}
+      {config.referenceValue !== undefined && !isNaN(config.referenceValue) && (
+        <Line x1={xScale(config.referenceValue)} y1={0} x2={xScale(config.referenceValue)} y2={layout.innerHeight} stroke="currentColor" strokeDasharray="4,4" opacity={0.6} />
+      )}
+    </BaseChartLayout>
+  );
+}
+
+// ----------------------------------------
+// Grouped Range Dumbbell Chart
+// ----------------------------------------
+export function GroupedRangeDumbbellChart(props: GroupedChartsProps) {
+  const { sheet, config, width, height } = props;
+  const colors = PALETTES[config.palette || "okabe-ito"] || PALETTES["okabe-ito"];
+  const { rowTitles, colGroups, colGroupNames, rawData } = useMemo(() => parseGroupedData(sheet), [sheet]);
+
+  const mode = config.rangeMode ?? "min_max";
+  let minV = Infinity, maxV = -Infinity;
+  const rangesByRowGroup = new Map<string, { low: number, high: number, center: number }>();
+  
+  rawData.forEach((row, rIdx) => {
+    const rowTitle = rowTitles[rIdx];
+    colGroups.forEach(gId => {
+      const vals = row[gId] || [];
+      if (vals.length === 0) return;
+      
+      let low = 0, high = 0, center = 0;
+      const sorted = [...vals].sort((a: number,b: number)=>a-b);
+      
+      if (mode === "min_max") {
+        low = sorted[0];
+        high = sorted[sorted.length - 1];
+        center = sorted[Math.floor(sorted.length/2)];
+      } else if (mode === "iqr") {
+        const q1 = sorted[Math.floor(sorted.length * 0.25)];
+        const q3 = sorted[Math.floor(sorted.length * 0.75)];
+        low = q1; high = q3;
+        center = sorted[Math.floor(sorted.length/2)];
+      } else {
+        const mean = vals.reduce((a:number,b:number)=>a+b,0)/vals.length;
+        const sd = Math.sqrt(vals.reduce((a:number,b:number)=>a+Math.pow(b-mean,2),0)/(vals.length-1 || 1));
+        low = mean - sd; high = mean + sd;
+        center = mean;
+      }
+      
+      rangesByRowGroup.set(`${rowTitle}-${gId}`, { low, high, center });
+      if (low < minV) minV = low;
+      if (high > maxV) maxV = high;
+    });
+  });
+
+  const _range = getAutoAxisRange((isFinite(minV) && isFinite(maxV)) ? [minV, maxV] : [], 0.05);
+  const xMin = (config.xAxisMin != null) ? config.xAxisMin : _range.min;
+  const xMax = (config.xAxisMax != null) ? config.xAxisMax : _range.max;
+
+  const legendItems = colGroups.map((g, i) => ({ label: colGroupNames[i], color: colors[i % colors.length] }));
+  const layout = computeChartLayout({
+    width, height, config,
+    xTickLabels: [xMin.toPrecision(3), xMax.toPrecision(3)], 
+    yTickLabels: rowTitles, 
+    orientation: "horizontal",
+    legendItems: config.showLegend !== false ? legendItems : [],
+    maxBracketTier: -1,
+    hasOmnibus: false
+  });
+
+  const yScale0 = scaleBand<string>({ domain: rowTitles, range: [0, layout.innerHeight], padding: 0.2 });
+  const yScale1 = scaleBand<string>({ domain: colGroups, range: [0, yScale0.bandwidth()], padding: 0.1 });
+  const xScale = scaleLinear<number>({ domain: [xMin, xMax], range: [0, layout.innerWidth] });
+
+  const radius = config.pointSize ?? 4;
+
+  return (
+    <BaseChartLayout
+      width={width} height={height} margin={layout.margin}
+      xScale={xScale} yScale={yScale0}
+      xLabel={config.xAxisTitle} yLabel={config.yAxisTitle}
+      showGrid={true} gridDirection="vertical"
+      fontFamily={config.fontFamily} fontSize={config.fontSize}
+      axisTitleFontSize={config.axisTitleFontSize} axisLabelFontSize={config.axisLabelFontSize}
+      xAxisTitleY={layout.xAxisTitleY} yAxisTitleX={layout.yAxisTitleX}
+      legend={layout.legend}
+    >
+      {rawData.map((row, rIdx) => {
+        const rowTitle = rowTitles[rIdx];
+        const y0 = yScale0(rowTitle) ?? 0;
+        
+        return (
+          <g key={rowTitle} transform={`translate(0, ${y0})`}>
+            {colGroups.map((gId, gIdx) => {
+              const rData = rangesByRowGroup.get(`${rowTitle}-${gId}`);
+              if (!rData || isNaN(rData.center)) return null;
+              
+              const cy = (yScale1(gId) ?? 0) + yScale1.bandwidth() / 2;
+              const color = colors[gIdx % colors.length];
+
+              return (
+                <g key={gId}>
+                  <Line x1={xScale(rData.low)} y1={cy} x2={xScale(rData.high)} y2={cy} stroke={color} strokeWidth={2} opacity={0.6} />
+                  <Circle cx={xScale(rData.low)} cy={cy} r={radius} fill={color} />
+                  <Circle cx={xScale(rData.high)} cy={cy} r={radius} fill={color} />
+                  {mode !== "mean_sd" && (
+                    <Circle cx={xScale(rData.center)} cy={cy} r={radius * 0.75} fill="white" stroke={color} strokeWidth={1.5} />
+                  )}
+                </g>
+              );
+            })}
+          </g>
+        );
+      })}
+    </BaseChartLayout>
   );
 }

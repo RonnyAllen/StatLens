@@ -160,6 +160,8 @@ export const GraphConfigSchema = z.object({
   trendlineType: z.enum(["none", "linear", "linear_forecast", "exponential", "logarithmic"]).optional(),
   forceIntercept: z.boolean().optional(),
   forcedInterceptValue: z.number().optional(),
+  pieDonutStyle: z.enum(["pie", "donut"]).optional(),
+  pieDonutDataColumn: z.string().optional(),
   histogramBins: z.number().optional(),
   histogramBinSettings: z.object({
     type: z.enum(["continuous", "prebinned"]),
@@ -173,7 +175,7 @@ export const GraphSchema = z.object({
   sheetId: z.string().uuid(),
   analysisId: z.string().uuid().optional(),
   graphFamily: z.enum(["Column", "XY", "Survival", "Grouped", "Contingency", "PartsOfWhole", "MultipleVariables", "Nested"]),
-  chartType: z.enum(["bar-error", "box", "violin", "raincloud", "scatter", "line-fit", "km-step", "jitter", "strip", "swarm", "h-box", "range-dumbbell", "ci-forest", "histogram"]),
+  chartType: z.enum(["bar-error", "box", "violin", "raincloud", "scatter", "line-fit", "km-step", "jitter", "strip", "swarm", "h-box", "range-dumbbell", "ci-forest", "histogram", "pie", "donut", "heatmap"]),
   name: z.string().optional(),
   config: GraphConfigSchema,
   createdAt: z.string()

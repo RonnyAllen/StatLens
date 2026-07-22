@@ -18,6 +18,23 @@ export function GraphSettingsPanel({ graph, sheet, analyses, onChangeConfig, onC
   const config = graph.config;
   const chartType = graph.chartType;
   
+  const validPieColumns = React.useMemo(() => {
+    if (!sheet) return [];
+    return sheet.columnGroups.filter(g => {
+      return sheet.data.some(row => {
+        const v = row[g.id];
+        return v !== null && v !== undefined && v !== "" && !isNaN(Number(v));
+      });
+    });
+  }, [sheet]);
+  
+  const pieColumnOptions = React.useMemo(() => {
+    return [
+      { value: "aggregate_all", label: "Aggregate Across Columns (Sum)" },
+      ...validPieColumns.map(g => ({ value: g.id, label: g.name || g.id }))
+    ];
+  }, [validPieColumns]);
+  
   const [copiedFormat, setCopiedFormat] = useState<any>(null);
 
   useEffect(() => {
@@ -83,24 +100,53 @@ export function GraphSettingsPanel({ graph, sheet, analyses, onChangeConfig, onC
         <div className="flex flex-col gap-1.5">
           <label className="text-base font-medium">Chart Type</label>
           <SearchableSelect
-            options={[
-              { label: "Bar & Error", value: "bar-error", group: "Distribution" },
-              { label: "Frequency Histogram", value: "histogram", group: "Distribution" },
-              { label: "Box & Whisker", value: "box", group: "Distribution" },
-              { label: "Notched Box", value: "notched_box", group: "Distribution" },
-              { label: "Violin Plot", value: "violin", group: "Distribution" },
-              { label: "Raincloud Plot", value: "raincloud", group: "Distribution" },
-              { label: "Notched Raincloud", value: "notched_raincloud", group: "Distribution" },
-              { label: "Scatter Plot", value: "scatter", group: "Points" },
-              { label: "Jitter", value: "jitter", group: "Points" },
-              { label: "Strip", value: "strip", group: "Points" },
-              { label: "Swarm", value: "swarm", group: "Points" },
-              { label: "Horizontal Box", value: "h-box", group: "Horizontal" },
-              { label: "Range/Dumbbell", value: "range-dumbbell", group: "Special" },
-              { label: "CI Forest", value: "ci-forest", group: "Special" },
-              { label: "Kaplan-Meier Step Curve", value: "km-step", group: "Special" },
-            ]}
-            value={chartType === "box" && config.notched ? "notched_box" : (chartType === "raincloud" && config.notched ? "notched_raincloud" : chartType)}
+            options={(() => {
+              const getRecommendedGroup = (type?: string) => {
+                switch (type) {
+                  case "XY": return "XY / Continuous";
+                  case "Survival": return "Survival";
+                  case "PartsOfWhole": return "Parts of Whole";
+                  case "Grouped":
+                  case "Nested": return "Grouped / Nested";
+                  default: return "Distribution / Column";
+                }
+              };
+
+              const recommendedGroup = getRecommendedGroup(sheet?.type);
+
+              const rawChartOptions = [
+                { label: "Scatter Plot", value: "scatter", group: "XY / Continuous" },
+                { label: "Line + Fit", value: "line-fit", group: "XY / Continuous" },
+                { label: "Bar & Error", value: "bar-error", group: "Distribution / Column" },
+                { label: "Frequency Histogram", value: "histogram", group: "Distribution / Column" },
+                { label: "Box & Whisker", value: "box", group: "Distribution / Column" },
+                { label: "Notched Box", value: "notched_box", group: "Distribution / Column" },
+                { label: "Violin Plot", value: "violin", group: "Distribution / Column" },
+                { label: "Raincloud Plot", value: "raincloud", group: "Distribution / Column" },
+                { label: "Notched Raincloud", value: "notched_raincloud", group: "Distribution / Column" },
+                { label: "Jitter", value: "jitter", group: "Distribution / Column" },
+                { label: "Strip", value: "strip", group: "Distribution / Column" },
+                { label: "Swarm", value: "swarm", group: "Distribution / Column" },
+                { label: "Horizontal Box", value: "h-box", group: "Horizontal" },
+                { label: "Range/Dumbbell", value: "range-dumbbell", group: "Horizontal" },
+                { label: "CI Forest", value: "ci-forest", group: "Horizontal" },
+                { label: "Kaplan-Meier Step Curve", value: "km-step", group: "Survival" },
+                { label: "Pie Chart", value: "pie", group: "Parts of Whole" },
+                { label: "Donut Chart", value: "donut", group: "Parts of Whole" },
+                { label: "Heatmap", value: "heatmap", group: "Grouped / Nested" }
+              ];
+
+              return [...rawChartOptions].sort((a, b) => {
+                if (a.group === recommendedGroup && b.group !== recommendedGroup) return -1;
+                if (b.group === recommendedGroup && a.group !== recommendedGroup) return 1;
+                return rawChartOptions.indexOf(a) - rawChartOptions.indexOf(b);
+              });
+            })()}
+            value={
+              chartType === "box" && config.notched ? "notched_box" : 
+              (chartType === "raincloud" && config.notched ? "notched_raincloud" : 
+              (chartType === "pie" && config.pieDonutStyle === "donut" ? "donut" : chartType))
+            }
             onChange={(val) => {
               if (val === "notched_box") {
                 onChangeChartType("box");
@@ -108,6 +154,12 @@ export function GraphSettingsPanel({ graph, sheet, analyses, onChangeConfig, onC
               } else if (val === "notched_raincloud") {
                 onChangeChartType("raincloud");
                 onChangeConfig({ ...config, notched: true });
+              } else if (val === "donut") {
+                onChangeChartType("pie");
+                onChangeConfig({ ...config, pieDonutStyle: "donut" });
+              } else if (val === "pie") {
+                onChangeChartType("pie");
+                onChangeConfig({ ...config, pieDonutStyle: "pie" });
               } else {
                 onChangeChartType(val);
                 if (val === "box" || val === "raincloud") {
@@ -224,6 +276,55 @@ export function GraphSettingsPanel({ graph, sheet, analyses, onChangeConfig, onC
             <option value="mean_sd">Mean ± SD</option>
             <option value="mean_95ci">Mean ± 95% CI</option>
           </select>
+        </div>
+      )}
+
+      {chartType === "pie" && (
+        <>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-base font-medium">Style</label>
+            <select 
+              className="p-2 border rounded-md text-base bg-background"
+              value={config.pieDonutStyle ?? "pie"}
+              onChange={(e) => handleChange("pieDonutStyle", e.target.value)}
+            >
+              <option value="pie">Pie Chart</option>
+              <option value="donut">Donut Chart</option>
+            </select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-base font-medium">Data to Graph</label>
+            <SearchableSelect 
+              value={config.pieDonutDataColumn ?? "aggregate_all"}
+              onChange={(val) => handleChange("pieDonutDataColumn", val)}
+              options={pieColumnOptions}
+            />
+          </div>
+        </>
+      )}
+
+      {chartType === "heatmap" && (
+        <div className="grid grid-cols-2 gap-2">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-base font-medium">Heatmap Min</label>
+            <input 
+              type="number" 
+              className="p-2 border rounded-md text-base bg-background"
+              placeholder="Auto"
+              value={config.heatmapMin ?? ""}
+              onChange={(e) => handleChange("heatmapMin", e.target.value === "" ? undefined : Number(e.target.value))}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-base font-medium">Heatmap Max</label>
+            <input 
+              type="number" 
+              className="p-2 border rounded-md text-base bg-background"
+              placeholder="Auto"
+              value={config.heatmapMax ?? ""}
+              onChange={(e) => handleChange("heatmapMax", e.target.value === "" ? undefined : Number(e.target.value))}
+            />
+          </div>
         </div>
       )}
 

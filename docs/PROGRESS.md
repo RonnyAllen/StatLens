@@ -56,3 +56,14 @@
 - Updated Survival block with Kaplan-Meier, Log-rank, Hazard Ratios, and Gehan.
 - Made Grouped block normality-aware, suggesting ART ANOVA if needed.
 - Updated runtime_audit.py to rigorously test recommender consistency.
+
+## Phase 5 (Graph Rendering & Extensibility)
+- **What was built:**
+  - Expanded the `GraphEngine` to handle new data structures and chart families (Grouped, Nested, PartsOfWhole, XY).
+  - Implemented logic in `GraphSettingsPanel` to parse chart recommendations and auto-sort the chart types in the dropdown based on the dataset type (`XY`, `Grouped`, etc.) via `SearchableSelect`.
+  - Added new Chart Components: `PieChart` (with dynamic contrast-aware text coloring), `LineFitChart` (via `XYScatterChart`), and Kaplan-Meier Step Curve (`SurvivalChart`).
+  - Implemented grouped versions of extensive chart types: `GroupedBoxChart`, `GroupedRaincloudChart`, `GroupedViolinChart`, `GroupedJitterChart`, `GroupedSwarmChart`, `GroupedStripChart`, `GroupedHBoxChart`, `GroupedRangeDumbbellChart`, and `GroupedBarChart`.
+  - Upgraded `HeatmapChart` to dynamically wire user inputs (`heatmapMin` and `heatmapMax`) to the color scales and gracefully handle multiple column sets.
+  - Wired in `pieDonutDataColumn` aggregation selection natively to support custom or aggregate parts-of-whole slices.
+- **How it was verified:** Ensured all UI dropdowns render expected values, ran `tsc -b && vite build` which succeeded cleanly.
+- **Known limitations:** Heatmap gradients are partially limited to standard palettes until specific dynamic endpoints are passed via config.

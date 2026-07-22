@@ -7,6 +7,8 @@ import { HBoxChart, RangeDumbbellChart, CIForestChart } from "./HorizontalCatego
 import { XYScatterChart } from "./XYCharts";
 import { SurvivalChart } from "./SurvivalChart";
 import { HistogramChart } from "./HistogramChart";
+import { PieChart } from "./PartsOfWholeCharts";
+import { GroupedBarChart, GroupedBoxChart, HeatmapChart, GroupedViolinChart, GroupedSwarmChart, GroupedStripChart, GroupedJitterChart, GroupedRaincloudChart, GroupedHBoxChart, GroupedRangeDumbbellChart } from "./GroupedCharts";
 import { exportPNG, exportSVG } from "@/lib/exportGraph";
 import { Download } from "lucide-react";
 
@@ -85,16 +87,15 @@ export function GraphEngine({ graph, sheet, analysisResults }: GraphEngineProps)
             // Chart rendering workspace reduced to 75% of the available area (25% smaller).
             const width = Math.max(rawWidth * 0.75, 1);
             const height = Math.max(rawHeight * 0.75, 1);
+            const isGrouped = sheet.type === "Grouped" || sheet.type === "Nested";
             return (
             <svg ref={svgRef} width={width} height={height} style={{ background: graph.config.background === "white" ? "white" : "transparent" }}>
               {graph.chartType === "bar-error" && (
-                <BarErrorChart 
-                  sheet={sheet} 
-                  analysisResults={analysisResults} 
-                  config={graph.config} 
-                  width={width} 
-                  height={height} 
-                />
+                isGrouped ? (
+                  <GroupedBarChart sheet={sheet} analysisResults={analysisResults} config={graph.config} width={width} height={height} />
+                ) : (
+                  <BarErrorChart sheet={sheet} analysisResults={analysisResults} config={graph.config} width={width} height={height} />
+                )
               )}
               {graph.chartType === "histogram" && (
                 <HistogramChart 
@@ -106,67 +107,89 @@ export function GraphEngine({ graph, sheet, analysisResults }: GraphEngineProps)
                 />
               )}
               {graph.chartType === "box" && (
-                <BoxChart 
-                  sheet={sheet} 
-                  analysisResults={analysisResults} 
-                  config={graph.config} 
-                  width={width} 
-                  height={height} 
-                />
+                isGrouped ? (
+                  <GroupedBoxChart sheet={sheet} analysisResults={analysisResults} config={graph.config} width={width} height={height} />
+                ) : (
+                  <BoxChart sheet={sheet} analysisResults={analysisResults} config={graph.config} width={width} height={height} />
+                )
               )}
               {graph.chartType === "violin" && (
-                <ViolinChart 
-                  sheet={sheet} 
-                  analysisResults={analysisResults} 
-                  config={graph.config} 
-                  width={width} 
-                  height={height} 
-                />
+                isGrouped ? (
+                  <GroupedViolinChart sheet={sheet} analysisResults={analysisResults} config={graph.config} width={width} height={height} />
+                ) : (
+                  <ViolinChart sheet={sheet} analysisResults={analysisResults} config={graph.config} width={width} height={height} />
+                )
               )}
               {graph.chartType === "raincloud" && (
-                <RaincloudChart 
-                  sheet={sheet} 
-                  analysisResults={analysisResults} 
-                  config={graph.config} 
-                  width={width} 
-                  height={height} 
-                />
+                isGrouped ? (
+                  <GroupedRaincloudChart sheet={sheet} analysisResults={analysisResults} config={graph.config} width={width} height={height} />
+                ) : (
+                  <RaincloudChart sheet={sheet} analysisResults={analysisResults} config={graph.config} width={width} height={height} />
+                )
               )}
 
-              {graph.chartType === "scatter" && sheet.config.type === "XY" && (
+              {(graph.chartType === "scatter" || graph.chartType === "line-fit") && sheet.config.type === "XY" && (
                 <XYScatterChart 
                   sheet={sheet} 
                   analysisResults={analysisResults} 
-                  config={graph.config} 
+                  config={{
+                    ...graph.config,
+                    trendlineType: graph.chartType === "line-fit" && !graph.config.trendlineType ? "linear" : graph.config.trendlineType
+                  }} 
                   width={width} 
                   height={height} 
+                />
+              )}
+              {graph.chartType === "pie" && (
+                <PieChart 
+                  sheet={sheet}
+                  config={graph.config}
+                  width={width}
+                  height={height}
                 />
               )}
 
               {graph.chartType === "scatter" && sheet.config.type !== "XY" && (
-                <ScatterChart 
-                  sheet={sheet} 
-                  analysisResults={analysisResults} 
-                  config={graph.config} 
-                  width={width} 
-                  height={height} 
-                />
+                <ScatterChart sheet={sheet} analysisResults={analysisResults} config={graph.config} width={width} height={height} />
               )}
 
               {graph.chartType === "strip" && (
-                <StripChart sheet={sheet} analysisResults={analysisResults} config={graph.config} width={width} height={height} />
+                isGrouped ? (
+                  <GroupedStripChart sheet={sheet} analysisResults={analysisResults} config={graph.config} width={width} height={height} />
+                ) : (
+                  <StripChart sheet={sheet} analysisResults={analysisResults} config={graph.config} width={width} height={height} />
+                )
               )}
               {graph.chartType === "jitter" && (
-                <JitterChart sheet={sheet} analysisResults={analysisResults} config={graph.config} width={width} height={height} />
+                isGrouped ? (
+                  <GroupedJitterChart sheet={sheet} analysisResults={analysisResults} config={graph.config} width={width} height={height} />
+                ) : (
+                  <JitterChart sheet={sheet} analysisResults={analysisResults} config={graph.config} width={width} height={height} />
+                )
               )}
               {graph.chartType === "swarm" && (
-                <SwarmChart sheet={sheet} analysisResults={analysisResults} config={graph.config} width={width} height={height} />
+                isGrouped ? (
+                  <GroupedSwarmChart sheet={sheet} analysisResults={analysisResults} config={graph.config} width={width} height={height} />
+                ) : (
+                  <SwarmChart sheet={sheet} analysisResults={analysisResults} config={graph.config} width={width} height={height} />
+                )
               )}
               {graph.chartType === "h-box" && (
-                <HBoxChart sheet={sheet} analysisResults={analysisResults} config={graph.config} width={width} height={height} />
+                isGrouped ? (
+                  <GroupedHBoxChart sheet={sheet} analysisResults={analysisResults} config={graph.config} width={width} height={height} />
+                ) : (
+                  <HBoxChart sheet={sheet} analysisResults={analysisResults} config={graph.config} width={width} height={height} />
+                )
               )}
               {graph.chartType === "range-dumbbell" && (
-                <RangeDumbbellChart sheet={sheet} analysisResults={analysisResults} config={graph.config} width={width} height={height} />
+                isGrouped ? (
+                  <GroupedRangeDumbbellChart sheet={sheet} analysisResults={analysisResults} config={graph.config} width={width} height={height} />
+                ) : (
+                  <RangeDumbbellChart sheet={sheet} analysisResults={analysisResults} config={graph.config} width={width} height={height} />
+                )
+              )}
+              {graph.chartType === "heatmap" && (
+                <HeatmapChart sheet={sheet} analysisResults={analysisResults} config={graph.config} width={width} height={height} />
               )}
 
               {graph.chartType === "ci-forest" && (
@@ -176,7 +199,7 @@ export function GraphEngine({ graph, sheet, analysisResults }: GraphEngineProps)
                 <SurvivalChart sheet={sheet} config={graph.config} width={width} height={height} />
               )}
 
-              {graph.chartType !== "bar-error" && graph.chartType !== "box" && graph.chartType !== "violin" && graph.chartType !== "raincloud" && graph.chartType !== "scatter" && graph.chartType !== "strip" && graph.chartType !== "jitter" && graph.chartType !== "swarm" && graph.chartType !== "h-box" && graph.chartType !== "range-dumbbell" && graph.chartType !== "ci-forest" && graph.chartType !== "km-step" && graph.chartType !== "histogram" && (
+              {graph.chartType !== "bar-error" && graph.chartType !== "pie" && graph.chartType !== "line-fit" && graph.chartType !== "box" && graph.chartType !== "violin" && graph.chartType !== "raincloud" && graph.chartType !== "scatter" && graph.chartType !== "strip" && graph.chartType !== "jitter" && graph.chartType !== "swarm" && graph.chartType !== "h-box" && graph.chartType !== "range-dumbbell" && graph.chartType !== "ci-forest" && graph.chartType !== "km-step" && graph.chartType !== "histogram" && graph.chartType !== "heatmap" && (
                 <text x={width/2} y={height/2} textAnchor="middle" fill="#666">
                   {graph.chartType} not implemented yet
                 </text>

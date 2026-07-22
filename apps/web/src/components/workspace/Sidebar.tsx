@@ -214,8 +214,8 @@ export function Sidebar({ workbook, onUpdate, activeSheetId, activeAnalysisId, a
         id: newGraphId,
         sheetId: sheet.id,
         analysisId: analysis?.id,
-        graphFamily: sheet.type === "Survival" ? "Survival" : "Column",
-        chartType: sheet.type === "Survival" ? "km-step" : "bar-error",
+        graphFamily: sheet.type,
+        chartType: sheet.type === "Survival" ? "km-step" : sheet.type === "XY" ? "scatter" : sheet.type === "PartsOfWhole" ? "pie" : "bar-error",
         name: `Graph ${prev.graphs.length + 1}`,
         createdAt: new Date().toISOString(),
         config: {

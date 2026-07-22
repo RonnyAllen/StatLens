@@ -77,7 +77,7 @@ export function BaseChartLayout({
 
   return (
     <Group left={margin.left} top={margin.top}>
-      {showGrid && gridDirection === "horizontal" && (
+      {yScale && showGrid && gridDirection === "horizontal" && (
         <GridRows
           scale={yScale}
           width={innerWidth}
@@ -86,7 +86,7 @@ export function BaseChartLayout({
           strokeOpacity={0.5}
         />
       )}
-      {showGrid && gridDirection === "vertical" && (
+      {xScale && showGrid && gridDirection === "vertical" && (
         <GridColumns
           scale={xScale}
           width={innerWidth}
@@ -98,51 +98,55 @@ export function BaseChartLayout({
 
       {children}
 
-      <AxisLeft
-        scale={yScale}
-        stroke="#333"
-        tickStroke="#333"
-        tickValues={yTickValues}
-        tickFormat={tickFormat}
-        tickLabelProps={() => ({
-          fill: '#333',
-          fontSize: tickFontSize,
-          fontFamily: fontFamily,
-          textAnchor: 'end',
-          dy: '0.33em',
-          dx: '-0.25em',
-        })}
-        label={yLabel}
-        labelOffset={yAxisTitleX ?? 48}
-        labelProps={{
-          fill: '#333',
-          fontSize: titleFontSize,
-          fontFamily: fontFamily,
-          textAnchor: 'middle',
-        }}
-      />
+      {yScale && (
+        <AxisLeft
+          scale={yScale}
+          stroke="#333"
+          tickStroke="#333"
+          tickValues={yTickValues}
+          tickFormat={tickFormat}
+          tickLabelProps={() => ({
+            fill: '#333',
+            fontSize: tickFontSize,
+            fontFamily: fontFamily,
+            textAnchor: 'end',
+            dy: '0.33em',
+            dx: '-0.25em',
+          })}
+          label={yLabel}
+          labelOffset={yAxisTitleX ?? 48}
+          labelProps={{
+            fill: '#333',
+            fontSize: titleFontSize,
+            fontFamily: fontFamily,
+            textAnchor: 'middle',
+          }}
+        />
+      )}
       
-      <AxisBottom
-        top={innerHeight}
-        scale={xScale}
-        stroke="#333"
-        tickStroke="#333"
-        tickLabelProps={() => ({
-          fill: '#333',
-          fontSize: tickFontSize,
-          fontFamily: fontFamily,
-          textAnchor: 'middle',
-          dy: '0.25em',
-        })}
-        label={xLabel}
-        labelOffset={xAxisTitleY ?? 40}
-        labelProps={{
-          fill: '#333',
-          fontSize: titleFontSize,
-          fontFamily: fontFamily,
-          textAnchor: 'middle',
-        }}
-      />
+      {xScale && (
+        <AxisBottom
+          top={innerHeight}
+          scale={xScale}
+          stroke="#333"
+          tickStroke="#333"
+          tickLabelProps={() => ({
+            fill: '#333',
+            fontSize: tickFontSize,
+            fontFamily: fontFamily,
+            textAnchor: 'middle',
+            dy: '0.25em',
+          })}
+          label={xLabel}
+          labelOffset={xAxisTitleY ?? 40}
+          labelProps={{
+            fill: '#333',
+            fontSize: titleFontSize,
+            fontFamily: fontFamily,
+            textAnchor: 'middle',
+          }}
+        />
+      )}
 
       {legend && (
         <Group top={innerHeight + legend.y} left={0}>
