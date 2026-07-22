@@ -1,6 +1,6 @@
 import { ThemeProvider } from "./components/theme-provider"
 import { useEffect, useState, useRef } from 'react'
-import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './data/auth'
 import { Dashboard } from './components/dashboard/Dashboard'
 import { Workspace } from './components/workspace/Workspace'
@@ -149,6 +149,7 @@ function hexToHSL(hex: string, isDark: boolean = false) {
 
 function AppContent() {
   const { accessToken } = useAuth()
+  const location = useLocation()
   const { theme } = useTheme()
   const [statsState, setStatsState] = useState<"loading" | "ready" | "error">("loading")
   const [loadMessage, setLoadMessage] = useState("Initializing...")
@@ -253,7 +254,7 @@ function AppContent() {
             <Route path="/about" element={<AboutPage />} />
           </Routes>
         </div>
-        <Footer />
+        {(location.pathname === '/' || location.pathname === '/dashboard') && <Footer />}
       </main>
       <Toaster richColors position="bottom-right" />
     </div>

@@ -144,13 +144,13 @@ export function AnalysisResultsView({ analysis, workbook, onUpdateAnalysis }: An
                         {results?.statistic != null && (
                           <tr className="hover:bg-muted/30">
                             <td className="px-4 py-2">Test Statistic</td>
-                            <td className="px-4 py-2 text-right font-medium">{results.statistic?.toFixed(4)}</td>
+                            <td className="px-4 py-2 text-right font-medium">{results.statistic?.toFixed(5)}</td>
                           </tr>
                         )}
                         {results?.p_value != null && (
                           <tr className="hover:bg-muted/30">
                             <td className="px-4 py-2">P-value</td>
-                            <td className="px-4 py-2 text-right font-medium">{results.p_value?.toExponential(4)}</td>
+                            <td className="px-4 py-2 text-right font-medium">{results.p_value?.toExponential(5)}</td>
                           </tr>
                         )}
                         {results?.degrees_of_freedom != null && (
@@ -187,8 +187,8 @@ export function AnalysisResultsView({ analysis, workbook, onUpdateAnalysis }: An
                             <td className="px-4 py-2 capitalize">{key.replace(/_/g, ' ')}</td>
                             <td className="px-4 py-2 text-right">
                               {Array.isArray(val) 
-                                ? val.map(v => (typeof v === 'number' ? v.toFixed(4) : String(v))).join(', ') 
-                                : (typeof val === 'number' ? val.toFixed(4) : String(val ?? "-"))}
+                                ? val.map(v => (typeof v === 'number' ? v.toFixed(5) : String(v))).join(', ') 
+                                : (typeof val === 'number' ? val.toFixed(5) : String(val ?? "-"))}
                             </td>
                           </tr>
                         ))}
@@ -225,10 +225,10 @@ export function AnalysisResultsView({ analysis, workbook, onUpdateAnalysis }: An
                         return (
                           <tr key={i} className={`hover:bg-muted/50 transition-colors ${isSignificant ? 'bg-primary/5' : ''}`}>
                             <td className="px-4 py-2.5 font-medium">{comp.group1} <span className="text-muted-foreground font-normal mx-1">vs</span> {comp.group2}</td>
-                            <td className="px-4 py-2.5 text-right font-mono text-[13px]">{comp.mean_diff !== undefined ? comp.mean_diff?.toFixed(4) : "-"}</td>
-                            <td className="px-4 py-2.5 text-right font-mono text-[13px] whitespace-nowrap">{comp.ci_lower != null && comp.ci_upper != null ? `[${comp.ci_lower.toFixed(4)}, ${comp.ci_upper.toFixed(4)}]` : "—"}</td>
+                            <td className="px-4 py-2.5 text-right font-mono text-[13px]">{comp.mean_diff !== undefined ? comp.mean_diff?.toFixed(5) : "-"}</td>
+                            <td className="px-4 py-2.5 text-right font-mono text-[13px] whitespace-nowrap">{comp.ci_lower != null && comp.ci_upper != null ? `[${comp.ci_lower.toFixed(5)}, ${comp.ci_upper.toFixed(5)}]` : "—"}</td>
                             <td className={`px-4 py-2.5 text-right font-mono text-[13px] ${isSignificant ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
-                              {comp.p_value < 0.0001 ? "< 0.0001" : comp.p_value?.toFixed(4)}
+                              {comp.p_value < 0.0001 ? "< 0.0001" : comp.p_value?.toFixed(5)}
                             </td>
                             <td className="px-4 py-2.5 text-center">
                               {isSignificant ? <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400">Yes</span> : <span className="text-muted-foreground">No</span>}

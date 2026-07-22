@@ -73,7 +73,7 @@ The table type you pick determines which analyses are offered.
 | **Grouped** | Two factors at once | Drug × Dose on blood pressure | Two-way ANOVA (Type III), Repeated-Measures two-way, Mixed-effects, ART ANOVA (non-parametric) | Tukey on marginal means |
 | **Contingency** | Counts in categories | Exposed / Unexposed × Case / Control | Chi-square (± Yates), Fisher's exact, McNemar's, Odds and risk ratios, Diagnostic (sensitivity / specificity) | — |
 | **Survival** | Time until an event | Days to relapse by treatment arm | Kaplan-Meier, Log-rank (Mantel-Cox), Gehan-Breslow-Wilcoxon, Hazard ratios, Cox regression | Pairwise log-rank (Holm) |
-| **Parts of Whole** | One whole split into parts | Cell counts per phenotype | Chi-square goodness of fit, Binomial test | — |
+| **Parts of Whole** | One whole split into parts | Cell counts per phenotype | Fraction of total, Chi-square goodness of fit, Binomial test | — |
 | **Multiple Variables** | Many variables per subject | Age, BMI, dose, response per patient | Correlation matrix, Multiple linear regression, Multiple logistic regression, Poisson regression, PCA, Three-way ANOVA | — |
 | **Nested** | Subsamples within groups | 3 wells per animal, 4 animals per group | Nested t-test / nested one-way ANOVA | Tukey |
 

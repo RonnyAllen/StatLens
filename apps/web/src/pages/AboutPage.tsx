@@ -99,7 +99,7 @@ const TABLE_GUIDE: TableGuide[] = [
     type: "Parts of Whole",
     when: "One whole split into parts",
     example: "Cell counts per phenotype",
-    tests: "Chi-square goodness of fit, Binomial test",
+    tests: "Fraction of total, Chi-square goodness of fit, Binomial test",
     postHoc: "—",
   },
   {

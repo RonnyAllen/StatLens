@@ -1182,12 +1182,25 @@ def run():
                     if len(matrix) == 0 or matrix.size == 0:
                         result["error"] = "Insufficient data for Fisher's Exact test."
                     else:
-                        # Fallback to Chi-Square
-                        chi2, p, dof, ex = stats.chi2_contingency(matrix)
-                        result["statistic"] = get_clean_float(chi2)
-                        result["p_value"] = get_clean_float(p)
-                        sig = "significant" if p < 0.05 else "not significant"
-                        report = f"Table was {matrix.shape[0]}x{matrix.shape[1]}. Fisher's Exact Test requires a 2x2 contingency table. **Chi-Square test** was performed instead. The relationship was **{sig}** (p = {p:.4f})."
+                        n_perms = 500
+                        row_labels = np.repeat(np.arange(matrix.shape[0]), matrix.sum(axis=1).astype(int))
+                        col_labels = np.repeat(np.arange(matrix.shape[1]), matrix.sum(axis=0).astype(int))
+                        obs_stat, p_chi, dof, E = stats.chi2_contingency(matrix, correction=False)
+                        larger_eq = 0
+                        np.random.seed(42)
+                        for _ in range(n_perms):
+                            np.random.shuffle(col_labels)
+                            flat = row_labels * matrix.shape[1] + col_labels
+                            counts = np.bincount(flat, minlength=matrix.size).reshape(matrix.shape)
+                            sim_stat = np.sum((counts - E)**2 / E)
+                            if sim_stat >= obs_stat - 1e-9:
+                                larger_eq += 1
+                        p_val = larger_eq / n_perms
+                        
+                        result["statistic"] = get_clean_float(obs_stat)
+                        result["p_value"] = get_clean_float(p_val)
+                        sig = "significant" if p_val < 0.05 else "not significant"
+                        report = f"Table was {matrix.shape[0]}x{matrix.shape[1]}. A **Fisher-Freeman-Halton Exact Test** (Monte Carlo, {n_perms} perms) was performed. The relationship was **{sig}** (p = {p_val:.4f})."
                         result["report_markdown"] = report
 
             elif test_id == "McNemar's Test":
@@ -1235,6 +1248,50 @@ def run():
                     result["report_markdown"] = report
                 else:
                     result["error"] = "Diagnostic tests require a 2x2 contingency table (Rows: Test Positive/Negative, Cols: Condition Positive/Negative)."
+
+            elif test_id == "Cochran-Armitage Trend Test":
+                data_cols = [c for c in df.columns if c != "rowTitle"]
+                valid_data_cols = [c for c in data_cols if not df[c].isna().all()]
+                df_clean = df[valid_data_cols].dropna(how='any')
+                matrix = df_clean.values
+                
+                if matrix.shape[0] != 2 and matrix.shape[1] != 2:
+                    result["error"] = "Cochran-Armitage Trend Test requires one dimension to be binary (2xC or Rx2)."
+                else:
+                    if matrix.shape[0] != 2:
+                        matrix = matrix.T
+                    
+                    N = matrix.sum()
+                    if N == 0:
+                        result["error"] = "Table is empty or zero."
+                    else:
+                        weights = np.arange(1, matrix.shape[1] + 1)
+                        R1 = matrix[0].sum()
+                        R2 = matrix[1].sum()
+                        col_totals = matrix.sum(axis=0)
+                        
+                        if R1 == 0 or R2 == 0:
+                            z = 0
+                            p_val = 1.0
+                        else:
+                            term1 = np.sum(weights * matrix[0])
+                            term2 = (R1 / N) * np.sum(weights * col_totals)
+                            numerator = term1 - term2
+                            
+                            var = (R1 * R2) / (N * (N - 1)) * (np.sum(col_totals * (weights**2)) - (np.sum(col_totals * weights)**2) / N)
+                            if var <= 0:
+                                z = 0
+                                p_val = 1.0
+                            else:
+                                z = numerator / np.sqrt(var)
+                                p_val = 2 * stats.norm.sf(np.abs(z))
+                        
+                        result["statistic"] = get_clean_float(z)
+                        result["p_value"] = get_clean_float(p_val)
+                        result["report_markdown"] = (f"A **Cochran-Armitage Trend Test** was performed.\n\n"
+                                  f"**Z-statistic:** {z:.4f}\n"
+                                  f"**p-value:** {format_p_value(p_val)}\n")
+
 
         elif table_type == "XY":
             if len(columns) > 1:
@@ -2629,6 +2686,50 @@ def run():
                                 result["post_hocs"] = {"method": "Pairwise Logrank (Holm)", "comparisons": ph_results}
                                 
                         result["report_markdown"] = report
+
+                    elif test_id == "Log-rank Trend Test":
+                        if len(columns) < 3:
+                            result["error"] = "Log-rank Trend Test isn't available for this data type (requires at least 3 ordered groups)."
+                        else:
+                            T = []
+                            E = []
+                            group_codes = []
+                            time_col = columns[0]
+                            group_cols = columns[1:]
+                            for idx, row in df.iterrows():
+                                t_val = row.get(time_col)
+                                if pd.isna(t_val) or t_val is None:
+                                    continue
+                                try:
+                                    t_val = float(t_val)
+                                except:
+                                    continue
+                                for g_idx, c in enumerate(group_cols):
+                                    v = row.get(c)
+                                    if pd.notna(v) and v is not None:
+                                        T.append(t_val)
+                                        try:
+                                            E.append(float(v))
+                                        except:
+                                            E.append(0.0)
+                                        group_codes.append(g_idx + 1)
+                            
+                            df_trend = pd.DataFrame({'T': T, 'E': E, 'GroupOrd': group_codes})
+                            if df_trend.empty or len(df_trend['GroupOrd'].unique()) < 3:
+                                result["error"] = "Not enough data for trend test."
+                            else:
+                                    from lifelines import CoxPHFitter
+                                    cph_trend = CoxPHFitter()
+                                    cph_trend.fit(df_trend, duration_col='T', event_col='E')
+                                    z_stat = cph_trend.summary.loc['GroupOrd', 'z']
+                                    p_val = cph_trend.summary.loc['GroupOrd', 'p']
+                                    
+                                    result["statistic"] = get_clean_float(z_stat)
+                                    result["p_value"] = get_clean_float(p_val)
+                                    result["report_markdown"] = (f"A **Log-rank Trend Test** (via Cox proportional hazards) was performed.\n\n"
+                                              f"**Z-statistic:** {z_stat:.4f}\n"
+                                              f"**p-value:** {format_p_value(p_val)}\n")
+
             else:
                 result["error"] = "Survival Analysis requires Time and at least one Group column."
 
@@ -2636,32 +2737,82 @@ def run():
 
         elif table_type == "PartsOfWhole":
             if test_id == "Chi-Square goodness of fit":
-                df_clean = df.dropna()
-                data_col = columns[1] if (len(columns) > 1 and columns[0] == "rowTitle") else columns[0] if len(columns) > 0 else None
-                if not data_col:
-                    result["error"] = "No data found."
+                data_cols = [c for c in columns if c != "rowTitle"]
+                if not data_cols:
+                    result["error"] = "No data columns found."
                 else:
-                    observed = df_clean[data_col]
-                    chi_stat, p_val = chisquare(f_obs=observed)
-                    report = f"A **Chi-Square Goodness-of-Fit Test** was performed.\n\n"
-                    report += f"**Variable:** {data_col}\n"
-                    report += f"**Assumed Expected:** Equal frequencies across categories.\n\n"
-                    report += "### Results\n\n"
-                    p_str = format_p_value(p_val)
-                    report += f"- Chi-Square Statistic: {chi_stat:.3f}\n"
-                    report += f"- Degrees of Freedom: {len(observed)-1}\n"
-                    report += f"- P-value: {p_str}\n\n"
+                    col = options.get("chiSelectedColumn", data_cols[0])
+                    if col not in df.columns:
+                        col = data_cols[0]
                     
-                    report += "### Observed vs Expected\n\n"
-                    report += "| Row | Observed | Expected |\n"
-                    report += "|---|---|---|\n"
-                    expected_val = np.sum(observed) / len(observed)
-                    for idx, val in enumerate(observed):
-                        report += f"| {idx+1} | {val} | {expected_val:.2f} |\n"
+                    chi_exp_type = options.get("chiExpectedType", "actual")
+                    chi_exp_values = options.get("chiExpectedValues", {})
+                    # Convert JsProxy to dict if needed
+                    if hasattr(chi_exp_values, 'to_py'):
+                        chi_exp_values = chi_exp_values.to_py()
+                    
+                    valid_df = df.dropna(subset=[col]).copy()
+                    valid_df[col] = pd.to_numeric(valid_df[col], errors='coerce')
+                    valid_df = valid_df.dropna(subset=[col])
+                    
+                    obs = valid_df[col].values
+                    row_titles = valid_df.get("rowTitle", pd.Series([f"Row {i+1}" for i in range(len(valid_df))])).astype(str).tolist()
+                    
+                    if len(obs) < 2:
+                        result["error"] = "Require at least two categories."
+                    else:
+                        exp = []
+                        valid = True
+                        for i, (orig_idx, row) in enumerate(valid_df.iterrows()):
+                            exp_val = chi_exp_values.get(str(orig_idx))
+                            if exp_val is None:
+                                exp_val = chi_exp_values.get(orig_idx)
+                            if exp_val is None:
+                                try:
+                                    exp_val = chi_exp_values.get(int(orig_idx))
+                                except:
+                                    pass
+                            if exp_val is None:
+                                valid = False
+                                break
+                            exp.append(exp_val)
+                            
+                        if not valid:
+                            exp = [np.mean(obs)] * len(obs)
+                            exp_type_desc = "Uniform distribution (auto-generated)"
+                        else:
+                            exp = np.array(exp)
+                            if chi_exp_type == "percentages":
+                                exp = (exp / 100.0) * np.sum(obs)
+                                exp_type_desc = "Custom percentages provided"
+                            else:
+                                exp_type_desc = "Custom expected values provided"
+                            
+                            if not np.isclose(np.sum(exp), np.sum(obs)):
+                                exp = exp * (np.sum(obs) / np.sum(exp))
                         
-                    result["report_markdown"] = report
-                    result["statistic"] = get_clean_float(chi_stat)
-                    result["p_value"] = get_clean_float(p_val)
+                        chi2, p_val = chisquare(obs, f_exp=exp)
+                        dof = len(obs) - 1
+                        
+                        result["statistic"] = get_clean_float(chi2)
+                        result["p_value"] = get_clean_float(p_val)
+                        sig = "significant" if p_val < 0.05 else "not significant"
+                        
+                        report = f"A **Chi-Square Goodness-of-Fit Test** was performed.\n\n"
+                        report += f"**Variable:** {col_id_to_name.get(col, col)}\n"
+                        report += f"**Assumed Expected:** {exp_type_desc}\n\n"
+                        report += f"### Results\n"
+                        report += f"- Chi-Square Statistic: {chi2:.3f}\n"
+                        report += f"- Degrees of Freedom: {dof}\n"
+                        report += f"- P-value: {format_p_value(p_val)}\n\n"
+                        
+                        report += f"### Observed vs Expected\n\n"
+                        report += "| Category | Observed | Expected |\n"
+                        report += "|---|---|---|\n"
+                        for i in range(len(obs)):
+                            report += f"| {row_titles[i]} | {obs[i]:.1f} | {exp[i]:.2f} |\n"
+                        
+                        result["report_markdown"] = report
 
             elif test_id == "Binomial test":
                 df_clean = df.dropna()
@@ -2694,6 +2845,133 @@ def run():
                         
                         result["report_markdown"] = report
                         result["p_value"] = get_clean_float(p_val)
+
+            elif test_id == "Fraction of Total":
+                fot_divide_by = options.get("fotDivideBy", "column")
+                fot_display_as = options.get("fotDisplayAs", "fractions")
+                fot_calc_ci = options.get("fotCalculateCI", True)
+                fot_ci_level = options.get("fotCILevel", 95)
+                fot_ci_method = options.get("fotCIMethod", "wilson")
+                
+                # statsmodels method mapping
+                if fot_ci_method == "clopper-pearson":
+                    ci_method_sm = "beta"
+                    method_name = "Clopper-Pearson"
+                elif fot_ci_method == "wilson-narrower":
+                    ci_method_sm = "wilson"
+                    method_name = "Wilson (narrower)"
+                else:
+                    ci_method_sm = "wilson"
+                    method_name = "Wilson/Brown"
+
+                alpha = 1.0 - (fot_ci_level / 100.0)
+
+                data_cols_initial = [c for c in columns if c != "rowTitle"]
+                if not data_cols_initial:
+                    result["error"] = "No data columns found."
+                else:
+                    # Drop rows that are completely NaN across all data columns
+                    df_clean = df.dropna(subset=data_cols_initial, how='all').copy()
+                    
+                    # Also drop columns that are completely NaN (blank variables)
+                    data_cols = [c for c in data_cols_initial if not df_clean[c].isna().all()]
+                    
+                    if not data_cols:
+                        result["error"] = "No data to analyze."
+                        return result
+                    if len(df_clean) == 0:
+                        result["error"] = "No valid data to analyze."
+                        return result
+                        
+                    matrix = df_clean[data_cols].apply(pd.to_numeric, errors='coerce').values
+                    row_titles = df_clean.get("rowTitle", pd.Series([f"Row {i+1}" for i in range(len(df_clean))])).astype(str).tolist()
+
+
+                    grand_total = np.nansum(matrix)
+                    col_totals = np.nansum(matrix, axis=0)
+                    row_totals = np.nansum(matrix, axis=1)
+
+                    if grand_total <= 0:
+                        result["error"] = "Total sum must be strictly positive."
+                    else:
+                        from statsmodels.stats.proportion import proportion_confint
+                        report = f"A **Fraction of Total** analysis was performed.\n\n"
+                        report += f"**Divide by:** {fot_divide_by.capitalize()} total  "
+                        report += f"**Display as:** {fot_display_as.capitalize()}  "
+                        if fot_calc_ci:
+                            report += f"**Confidence Intervals:** {fot_ci_level}% ({method_name})\n\n"
+                        else:
+                            report += f"**Confidence Intervals:** None\n\n"
+
+                        modes = ["column", "row", "grand"] if fot_divide_by == "all" else [fot_divide_by]
+
+                        for mode in modes:
+                            if mode == "column":
+                                report += f"### Divide by Column Total\n\n"
+                            elif mode == "row":
+                                report += f"### Divide by Row Total\n\n"
+                            elif mode == "grand":
+                                report += f"### Divide by Grand Total\n\n"
+                            
+                            for c_idx, col_name in enumerate(data_cols):
+                                if mode == "row" and len(data_cols) > 1:
+                                    if c_idx == 0:
+                                        # For row totals, we typically show one combined table with all columns
+                                        report += "| Row | " + " | ".join(data_cols) + " |\n"
+                                        report += "|---|" + "---|" * len(data_cols) + "\n"
+                                        for r_idx, r_title in enumerate(row_titles):
+                                            denom = row_totals[r_idx]
+                                            if denom <= 0: continue
+                                            row_str = f"| {r_title} | "
+                                            for c2_idx in range(len(data_cols)):
+                                                val = matrix[r_idx, c2_idx]
+                                                frac = val / denom
+                                                display_val = frac * 100 if fot_display_as == "percentages" else frac
+                                                sym = "%" if fot_display_as == "percentages" else ""
+                                                
+                                                if fot_calc_ci:
+                                                    ci_low, ci_high = proportion_confint(val, denom, alpha=alpha, method=ci_method_sm)
+                                                    d_low = ci_low * 100 if fot_display_as == "percentages" else ci_low
+                                                    d_high = ci_high * 100 if fot_display_as == "percentages" else ci_high
+                                                    row_str += f"{display_val:.5f}{sym} [{d_low:.5f}{sym}, {d_high:.5f}{sym}] | "
+                                                else:
+                                                    row_str += f"{display_val:.5f}{sym} | "
+                                            report += row_str + "\n"
+                                        report += "\n"
+                                    continue
+                                
+                                if mode != "row":
+                                    if len(data_cols) > 1:
+                                        report += f"#### {col_id_to_name.get(col_name, col_name)}\n\n"
+                                    
+                                    report += "| Row | Count | Fraction" + (" (%)" if fot_display_as == "percentages" else "")
+                                    if fot_calc_ci:
+                                        report += f" | {fot_ci_level}% CI |\n"
+                                    else:
+                                        report += " |\n"
+                                    
+                                    report += "|---|---|---" + ("|---|" if fot_calc_ci else "|") + "\n"
+                                    
+                                    for r_idx, r_title in enumerate(row_titles):
+                                        val = matrix[r_idx, c_idx]
+                                        denom = col_totals[c_idx] if mode == "column" else grand_total
+                                        if denom <= 0: continue
+                                        
+                                        frac = val / denom
+                                        display_val = frac * 100 if fot_display_as == "percentages" else frac
+                                        sym = "%" if fot_display_as == "percentages" else ""
+                                        
+                                        if fot_calc_ci:
+                                            ci_low, ci_high = proportion_confint(val, denom, alpha=alpha, method=ci_method_sm)
+                                            d_low = ci_low * 100 if fot_display_as == "percentages" else ci_low
+                                            d_high = ci_high * 100 if fot_display_as == "percentages" else ci_high
+                                            report += f"| {r_title} | {val} | {display_val:.5f}{sym} | [{d_low:.5f}{sym}, {d_high:.5f}{sym}] |\n"
+                                        else:
+                                            report += f"| {r_title} | {val} | {display_val:.5f}{sym} |\n"
+                                    report += "\n"
+
+                        result["report_markdown"] = report
+
 
         elif table_type == "MultipleVariables":
             # Drop fully-empty columns (a stray blank column in the sheet) so the last real
@@ -3011,6 +3289,36 @@ def run():
                     report += f"| **{idx}** | " + " | ".join(row_vals) + " |\n"
                 
                 result["report_markdown"] = report
+
+            elif test_id == "Partial Correlation":
+                if len(columns) < 3:
+                    result["error"] = "Partial Correlation requires at least 3 numeric variables."
+                else:
+                    df_pc = df[columns].apply(pd.to_numeric, errors='coerce').dropna()
+                    if df_pc.empty or len(df_pc.columns) < 3:
+                        result["error"] = "Insufficient valid data for partial correlation."
+                    else:
+                        x_col = columns[0]
+                        y_col = columns[1]
+                        covars = columns[2:]
+                        
+                        import pingouin as pg
+                        pcor = pg.partial_corr(data=df_pc, x=x_col, y=y_col, covar=covars)
+                        r_val = pcor['r'].iloc[0]
+                        pval_col = 'p_val' if 'p_val' in pcor.columns else 'p-value'
+                        if pval_col not in pcor.columns:
+                            if 'p' in pcor.columns:
+                                pval_col = 'p'
+                            else:
+                                raise ValueError(f"Could not find p-value column in {list(pcor.columns)}")
+                        p_val = pcor[pval_col].iloc[0]
+                        
+                        result["statistic"] = get_clean_float(r_val)
+                        result["p_value"] = get_clean_float(p_val)
+                        result["report_markdown"] = (f"A **Partial Correlation (Pearson)** was performed between {x_col} and {y_col}, controlling for {', '.join(covars)}.\n\n"
+                                  f"**Partial r:** {r_val:.4f}\n"
+                                  f"**p-value:** {format_p_value(p_val)}\n")
+
                     
     except ZeroDivisionError:
         result["error"] = "Division by zero. This usually happens when a group has no variance (all values are identical) or there is not enough data to compute statistics."
@@ -3076,7 +3384,7 @@ def analyze_sheet():
         sd = float(arr.std(ddof=1)) if n > 1 else 0.0
         descriptives[col] = {
             'n': n, 'mean': float(arr.mean()), 'sd': sd,
-            'sem': float(sd / _np.sqrt(n)) if n > 1 else 0.0,
+            'sem': float(sd / np.sqrt(n)) if n > 1 else 0.0,
             'min': float(arr.min()), 'max': float(arr.max()),
         }
 
@@ -3086,7 +3394,7 @@ def analyze_sheet():
     assumptions = {}
     if table_type in ('Column', 'Grouped', 'Nested') and n_groups >= 1:
         try:
-            norm_ps = [float(_st.shapiro(v).pvalue) for v in arrays if len(v) >= 3 and _np.std(v) > 0]
+            norm_ps = [float(stats.shapiro(v).pvalue) for v in arrays if len(v) >= 3 and np.std(v) > 0]
             if norm_ps:
                 assumptions['normality'] = {'passed': all(p > 0.05 for p in norm_ps)}
         except Exception:
@@ -3094,15 +3402,15 @@ def analyze_sheet():
         try:
             lev = [v for v in arrays if len(v) >= 2]
             if len(lev) >= 2:
-                assumptions['variance'] = {'passed': float(_st.levene(*lev).pvalue) > 0.05}
+                assumptions['variance'] = {'passed': float(stats.levene(*lev).pvalue) > 0.05}
         except Exception:
             pass
         try:
             has_out = False
             for v in arrays:
                 if len(v) >= 4:
-                    q1, q3 = _np.percentile(v, [25, 75]); iqr = q3 - q1
-                    if iqr > 0 and bool(_np.any((v < q1 - 3*iqr) | (v > q3 + 3*iqr))):
+                    q1, q3 = np.percentile(v, [25, 75]); iqr = q3 - q1
+                    if iqr > 0 and bool(np.any((v < q1 - 3*iqr) | (v > q3 + 3*iqr))):
                         has_out = True
             assumptions['outliers'] = {'passed': not has_out}
         except Exception:
@@ -3152,11 +3460,11 @@ def analyze_sheet():
             recommendation = {'testId': 'Nested one-way ANOVA', 'rationale': 'Three or more treatment groups, each with nested subgroups (variance-components model).', 'alternatives': ['Nested t-test']}
 
     elif table_type == 'Contingency':
-        menu = ["Fisher's Exact Test", 'Chi-Square Test', "Chi-Square Test (with Yates' correction)", "McNemar's Test"]
+        menu = ["Fisher's Exact Test", 'Chi-Square Test', "Chi-Square Test (with Yates' correction)", "McNemar's Test", "Cochran-Armitage Trend Test"]
         recommendation = _rec("Fisher's Exact Test", 'A contingency table \u2014 test association between the categorical variables.', menu)
 
     elif table_type == 'MultipleVariables':
-        menu = ['Multiple Linear Regression', 'Multiple Logistic Regression', 'Poisson Regression', 'Cox Regression', 'Correlation Matrix', 'Principal Component Analysis (PCA)']
+        menu = ['Multiple Linear Regression', 'Multiple Logistic Regression', 'Poisson Regression', 'Cox Regression', 'Correlation Matrix', 'Principal Component Analysis (PCA)', 'Partial Correlation']
         def _cat(col):
             sc = pd.to_numeric(df[col], errors='coerce')
             if sc.isna().any():
@@ -3171,11 +3479,11 @@ def analyze_sheet():
             recommendation = _rec('Multiple Linear Regression', 'Several continuous predictors and a response variable.', menu)
 
     elif table_type == 'PartsOfWhole':
-        menu = ['Chi-Square goodness of fit', 'Binomial test']
+        menu = ['Chi-Square goodness of fit', 'Binomial test', 'Fraction of Total']
         recommendation = _rec('Chi-Square goodness of fit', 'Parts of a whole \u2014 compare observed counts against expected proportions.', menu)
 
     elif table_type == 'Survival':
-        menu = ['Kaplan-Meier Survival Analysis', 'Log-rank (Mantel-Cox) test', 'Hazard Ratios', 'Gehan-Breslow-Wilcoxon test', 'Cox Regression']
+        menu = ['Kaplan-Meier Survival Analysis', 'Log-rank (Mantel-Cox) test', 'Hazard Ratios', 'Gehan-Breslow-Wilcoxon test', 'Cox Regression', 'Log-rank Trend Test']
         recommendation = _rec('Kaplan-Meier Survival Analysis', 'Time-to-event data \u2014 estimate survival curves and compare groups.', menu)
 
     return {
