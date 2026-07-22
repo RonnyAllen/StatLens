@@ -34,6 +34,7 @@ const IMPLEMENTED: string[] = [
   "Publication export: 600-DPI PNG (correct DPI metadata, embedded fonts) and SVG",
   "Google Drive save/load, light and dark themes",
   "Workspace organization: label workbooks with multiple custom color-coded tags",
+  "Progressive Web App (PWA): Install it as a standalone app and load instantly offline via Service Worker caching",
 ]
 
 const COMING_SOON: string[] = [
@@ -41,7 +42,7 @@ const COMING_SOON: string[] = [
   "Guided Analysis wizard — a step-by-step walkthrough",
   "PDF / EPS graph export",
   "Additional chart types (see below)",
-  "Offline / local-file storage",
+  "Local hard-drive file saving (offline storage)",
 ]
 
 interface TableGuide {
@@ -205,8 +206,8 @@ export function AboutPage() {
                 <CardTitle className="text-lg font-semibold">Nothing leaves your browser</CardTitle>
               </CardHeader>
               <CardContent className="p-4 pt-0 text-base text-muted-foreground">
-                StatLens is a static React + TypeScript app. There is no StatLens server and your
-                data is never uploaded to one.
+                StatLens is a static React + TypeScript Progressive Web App (PWA). There is no StatLens server and your
+                data is never uploaded to one. Once loaded, the heavy Python engines are aggressively cached on your device for instant, offline loading.
               </CardContent>
             </Card>
             <Card>

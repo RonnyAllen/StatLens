@@ -39,7 +39,7 @@ Statistics software tends to be expensive, desktop-bound, or both. StatLens does
 - **Free and open.** No licence, no seat count, no install.
 - **Actually correct.** Every statistic is checked against a published reference implementation, not eyeballed. See [Correctness](#correctness).
 - **Yours.** Your data goes to your Drive, not our server — there isn't one.
-- **Portable.** Any machine with a modern browser. Nothing to install, nothing to sync.
+- **Portable & Installable.** Any machine with a modern browser. It functions as a Progressive Web App (PWA): you can install it to your device and, thanks to aggressive Service Worker caching, it loads instantly and runs offline!
 
 ---
 
@@ -56,6 +56,7 @@ Statistics software tends to be expensive, desktop-bound, or both. StatLens does
 - **Publication export** — 600-DPI PNG (correct DPI metadata, embedded fonts) and SVG
 - **Google Drive save/load**, light and dark themes
 - **Workspace organization** — label workbooks with custom tags, assign them distinct colors, and apply multiple tags per workbook.
+- **Progressive Web App (PWA)** — Install it as a standalone app with instant offline loading via background Service Worker caching.
 
 An in-app [About page](https://ronnyallen.github.io/StatLens/about) carries the same guide, kept verified against the engine.
 
@@ -96,7 +97,7 @@ All support significance brackets and asterisks, computed and laid out automatic
 - Guided Analysis wizard — a step-by-step walkthrough
 - PDF / EPS graph export
 - More chart types — grouped bar, connected / before-after line, nested plot, pie / donut, heatmap
-- Offline / local-file storage
+- Local hard-drive file saving (offline storage)
 
 ---
 
@@ -129,7 +130,7 @@ StatLens is a **100% client-side single-page app**. Nothing runs on a server.
 **The parts that matter:**
 
 1. **The stats engine is real Python.** [`src/stats/analysis_engine.py`](apps/web/src/stats/analysis_engine.py) (~3,100 lines) is the single source of statistical truth. It executes under Pyodide inside a Web Worker, so heavy analyses never block the UI.
-2. **Pyodide loads from a CDN at runtime.** The Python runtime and scientific packages are *not* in the JS bundle. First load pulls tens of MB and takes a while — the header shows `Loading engine…` → `Engine ready`. After that the browser caches it.
+2. **Pyodide loads from a CDN at runtime, but caches locally.** The Python runtime and scientific packages are *not* in the JS bundle. First load pulls tens of MB — the header shows `Loading engine…` → `Engine ready`. After that, the **Service Worker** caches everything locally, meaning the app loads instantly on subsequent visits (even offline) and updates silently in the background (`StaleWhileRevalidate`).
 3. **Optional packages install via micropip** (pingouin, scikit-posthocs, lifelines) behind defensive imports — if one fails to install, the engine still loads and everything that doesn't need it still works.
 4. **No `SharedArrayBuffer`**, so no COOP/COEP headers are required and the whole app can be served as plain static files.
 5. **Storage is Google Drive.** Workbooks are JSON files named `*.statlens`, saved into a `StatLens` folder in your Drive.
