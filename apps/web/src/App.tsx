@@ -227,7 +227,7 @@ function AppContent() {
 
           <Link to="/about" className="text-sm font-medium px-3 py-1.5 rounded-full bg-blue-100/60 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200/80 dark:hover:bg-blue-800/40 transition-colors">About</Link>
           <ThemeToggle />
-          <ProfileMenu />
+          <ProfileMenu customImage={userProfile?.profileImageUrl} />
         </div>
       </header>
 
