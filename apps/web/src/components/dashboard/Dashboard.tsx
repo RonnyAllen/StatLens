@@ -4,7 +4,7 @@ import { useAuth } from "@/data/auth"
 import { DriveAPI } from "@/data/driveApi"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, LayoutGrid, List as ListIcon, MessageSquare, Tag, FileSpreadsheet, Plus } from "lucide-react"
+import { Search, LayoutGrid, List as ListIcon, MessageSquare, Tag, FileSpreadsheet, Plus, Download } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -54,6 +54,36 @@ export function Dashboard() {
   const [renameTargetId, setRenameTargetId] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState("")
   const [isRenaming, setIsRenaming] = useState(false)
+
+  // PWA Install state
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
+  const [isInstallable, setIsInstallable] = useState(false)
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault()
+      setDeferredPrompt(e)
+      setIsInstallable(true)
+    }
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    window.addEventListener('appinstalled', () => {
+      setIsInstallable(false)
+      setDeferredPrompt(null)
+    })
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    }
+  }, [])
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return
+    deferredPrompt.prompt()
+    const { outcome } = await deferredPrompt.userChoice
+    if (outcome === 'accepted') {
+      setIsInstallable(false)
+    }
+    setDeferredPrompt(null)
+  }
 
   // Debounce search
   useEffect(() => {
@@ -336,9 +366,17 @@ export function Dashboard() {
             <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
             <p className="text-muted-foreground">Welcome back, {user?.name || "Researcher"}</p>
           </div>
-          <Button onClick={() => setIsDialogOpen(true)} disabled={isLoading}>
-            New Workbook
-          </Button>
+          <div className="flex items-center gap-2">
+            {isInstallable && (
+              <Button onClick={handleInstallClick} variant="secondary" className="gap-2">
+                <Download className="w-4 h-4" />
+                Install App
+              </Button>
+            )}
+            <Button onClick={() => setIsDialogOpen(true)} disabled={isLoading}>
+              New Workbook
+            </Button>
+          </div>
         </div>
 
         <div className="flex flex-col md:flex-row gap-4 items-center bg-card p-3 rounded-lg border shadow-sm">
