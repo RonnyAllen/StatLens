@@ -533,7 +533,7 @@ export function AGGridWrapper({ sheet, onUpdate }: AGGridWrapperProps) {
       }
 
       // Undo
-      if (ctrl && e.key.toLowerCase() === 'z') {
+      if (ctrl && e.key.toLowerCase() === 'z' && !e.shiftKey) {
         e.preventDefault();
         const sheetId = latestSheetRef.current.id;
         const undoStack = globalUndoStacks.get(sheetId) || [];
@@ -549,7 +549,7 @@ export function AGGridWrapper({ sheet, onUpdate }: AGGridWrapperProps) {
         return;
       }
       // Redo
-      if (ctrl && e.key.toLowerCase() === 'y') {
+      if (ctrl && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) {
         e.preventDefault();
         const sheetId = latestSheetRef.current.id;
         const undoStack = globalUndoStacks.get(sheetId) || [];

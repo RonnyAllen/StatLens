@@ -146,7 +146,7 @@ export const GraphConfigSchema = z.object({
   xAxisStep: z.number().optional(),
   heatmapMin: z.number().optional(),
   heatmapMax: z.number().optional(),
-  fontFamily: z.string().default("Georgia, serif"),
+  fontFamily: z.string().default("Inter"),
   fontSize: z.number().default(12),
   axisTitleFontSize: z.number().optional(),
   axisLabelFontSize: z.number().optional(),
@@ -157,7 +157,14 @@ export const GraphConfigSchema = z.object({
   showPostHocCaption: z.boolean().default(true),
   pointSize: z.number().default(3),
   lineStyle: z.enum(["none", "straight", "smooth"]).optional(),
-  trendlineType: z.enum(["none", "linear", "linear_forecast", "exponential"]).optional()
+  trendlineType: z.enum(["none", "linear", "linear_forecast", "exponential", "logarithmic"]).optional(),
+  forceIntercept: z.boolean().optional(),
+  forcedInterceptValue: z.number().optional(),
+  histogramBins: z.number().optional(),
+  histogramBinSettings: z.object({
+    type: z.enum(["continuous", "prebinned"]),
+    stepSize: z.number().optional()
+  }).optional()
 })
 export type GraphConfig = z.infer<typeof GraphConfigSchema>
 
@@ -166,7 +173,7 @@ export const GraphSchema = z.object({
   sheetId: z.string().uuid(),
   analysisId: z.string().uuid().optional(),
   graphFamily: z.enum(["Column", "XY", "Survival", "Grouped", "Contingency", "PartsOfWhole", "MultipleVariables", "Nested"]),
-  chartType: z.enum(["bar-error", "box", "violin", "raincloud", "scatter", "line-fit", "km-step", "jitter", "strip", "swarm", "h-box", "range-dumbbell", "ci-forest"]),
+  chartType: z.enum(["bar-error", "box", "violin", "raincloud", "scatter", "line-fit", "km-step", "jitter", "strip", "swarm", "h-box", "range-dumbbell", "ci-forest", "histogram"]),
   name: z.string().optional(),
   config: GraphConfigSchema,
   createdAt: z.string()

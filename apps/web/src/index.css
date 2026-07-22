@@ -82,12 +82,11 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground antialiased selection:bg-primary/20;
+    @apply bg-background text-foreground antialiased selection:bg-primary/20 font-sans;
     background-image: radial-gradient(circle at 100% 0%, hsla(221, 83%, 60%, 0.08), transparent 40%),
                       radial-gradient(circle at 0% 100%, hsla(210, 40%, 50%, 0.05), transparent 40%);
     background-attachment: fixed;
-    font-size: 1.5rem; /* 24px — large, comfortable reading on laptops/desktops */
-    font-family: "Rockwell", "Courier Bold", Courier, Georgia, Times, "Times New Roman", serif;
+    font-size: 1.5625rem; /* 25px — increased by 1 point per user request */
     font-feature-settings: "rlig" 1, "calt" 1;
   }
   .dark body {

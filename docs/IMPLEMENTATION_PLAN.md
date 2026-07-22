@@ -73,7 +73,7 @@ We are splitting Phase 4 into logical chunks. **Phase 4A is currently completed.
 - **Contingency**: 2×2 Fisher's exact/Chi-square (Yates), RR, OR, diagnostics (Sensitivity, Specificity, PPV, NPV, likelihood ratios, NNT). Paired 2×2 McNemar. R×C Chi-square of independence, trend (Cochran-Armitage), Cramér's V, Fisher-Freeman-Halton.
 - **Survival**: Kaplan-Meier, log-rank (Mantel-Cox), Gehan-Breslow-Wilcoxon, log-rank for trend, Hazard Ratio (Mantel-Haenszel + Cox PH).
 - **Grouped/Nested**: Two-way, three-way, RM two-way ANOVA, and ART ANOVA (non-parametric). Nested t-test/ANOVA via mixed-effects models.
-- **Multiple Variables & Parts of Whole**: Multiple linear/logistic/Poisson regression, PCA (scree, loadings, scores, biplot). Chi-square goodness-of-fit, binomial test.
+- **Multiple Variables & Parts of Whole**: Multiple linear/logistic/Poisson regression, Firth's Penalized Logistic Regression, PCA (scree, loadings, scores, biplot). Chi-square goodness-of-fit, binomial test.
 
 ## Phase 5 — Graph engine, significance markers, & Advanced Geometries
 - SVG chart engine (D3/visx or library-in-SVG-mode + custom significance layer) implementing the

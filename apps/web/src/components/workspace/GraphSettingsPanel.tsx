@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { Copy, ClipboardPaste } from "lucide-react";
-import type { GraphConfig, Graph, Analysis } from "@/types/workbook";
+import type { GraphConfig, Graph, Analysis, DataSheet } from "@/types/workbook";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 interface GraphSettingsPanelProps {
   graph: Graph;
+  sheet?: DataSheet;
   analyses: Analysis[];
   onChangeConfig: (config: GraphConfig) => void;
   onChangeAnalysis?: (analysisId: string | undefined) => void;
   onChangeChartType?: (chartType: any) => void;
 }
 
-export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAnalysis, onChangeChartType }: GraphSettingsPanelProps) {
+export function GraphSettingsPanel({ graph, sheet, analyses, onChangeConfig, onChangeAnalysis, onChangeChartType }: GraphSettingsPanelProps) {
   const config = graph.config;
   const chartType = graph.chartType;
   
@@ -78,11 +82,26 @@ export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAn
       {onChangeChartType && (
         <div className="flex flex-col gap-1.5">
           <label className="text-base font-medium">Chart Type</label>
-          <select 
-            className="p-2 border rounded-md text-base bg-background"
+          <SearchableSelect
+            options={[
+              { label: "Bar & Error", value: "bar-error", group: "Distribution" },
+              { label: "Frequency Histogram", value: "histogram", group: "Distribution" },
+              { label: "Box & Whisker", value: "box", group: "Distribution" },
+              { label: "Notched Box", value: "notched_box", group: "Distribution" },
+              { label: "Violin Plot", value: "violin", group: "Distribution" },
+              { label: "Raincloud Plot", value: "raincloud", group: "Distribution" },
+              { label: "Notched Raincloud", value: "notched_raincloud", group: "Distribution" },
+              { label: "Scatter Plot", value: "scatter", group: "Points" },
+              { label: "Jitter", value: "jitter", group: "Points" },
+              { label: "Strip", value: "strip", group: "Points" },
+              { label: "Swarm", value: "swarm", group: "Points" },
+              { label: "Horizontal Box", value: "h-box", group: "Horizontal" },
+              { label: "Range/Dumbbell", value: "range-dumbbell", group: "Special" },
+              { label: "CI Forest", value: "ci-forest", group: "Special" },
+              { label: "Kaplan-Meier Step Curve", value: "km-step", group: "Special" },
+            ]}
             value={chartType === "box" && config.notched ? "notched_box" : (chartType === "raincloud" && config.notched ? "notched_raincloud" : chartType)}
-            onChange={(e) => {
-              const val = e.target.value;
+            onChange={(val) => {
               if (val === "notched_box") {
                 onChangeChartType("box");
                 onChangeConfig({ ...config, notched: true });
@@ -96,22 +115,7 @@ export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAn
                 }
               }
             }}
-          >
-            <option value="bar-error">Bar & Error</option>
-            <option value="box">Box & Whisker</option>
-            <option value="notched_box">Notched Box</option>
-            <option value="violin">Violin Plot</option>
-            <option value="raincloud">Raincloud Plot</option>
-            <option value="notched_raincloud">Notched Raincloud</option>
-            <option value="scatter">Scatter Plot</option>
-            <option value="jitter">Jitter</option>
-            <option value="strip">Strip</option>
-            <option value="swarm">Swarm</option>
-            <option value="h-box">Horizontal Box</option>
-            <option value="range-dumbbell">Range/Dumbbell</option>
-            <option value="ci-forest">CI Forest</option>
-            <option value="km-step">Kaplan-Meier Step Curve</option>
-          </select>
+          />
         </div>
       )}
 
@@ -158,33 +162,33 @@ export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAn
 
       <div className="grid grid-cols-3 gap-2">
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium">Y Min</label>
+          <label className="text-xs font-medium">{['h-box', 'range-dumbbell', 'ci-forest'].includes(chartType) ? 'X Min' : 'Y Min'}</label>
           <input 
             type="number" 
             className="p-2 border rounded-md text-base bg-background"
             placeholder="Auto"
-            value={config.yAxisMin ?? ""}
-            onChange={(e) => handleChange("yAxisMin", e.target.value === "" ? undefined : Number(e.target.value))}
+            value={['h-box', 'range-dumbbell', 'ci-forest'].includes(chartType) ? (config.xAxisMin ?? "") : (config.yAxisMin ?? "")}
+            onChange={(e) => handleChange(['h-box', 'range-dumbbell', 'ci-forest'].includes(chartType) ? "xAxisMin" : "yAxisMin", e.target.value === "" ? undefined : Number(e.target.value))}
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium">Y Max</label>
+          <label className="text-xs font-medium">{['h-box', 'range-dumbbell', 'ci-forest'].includes(chartType) ? 'X Max' : 'Y Max'}</label>
           <input 
             type="number" 
             className="p-2 border rounded-md text-base bg-background"
             placeholder="Auto"
-            value={config.yAxisMax ?? ""}
-            onChange={(e) => handleChange("yAxisMax", e.target.value === "" ? undefined : Number(e.target.value))}
+            value={['h-box', 'range-dumbbell', 'ci-forest'].includes(chartType) ? (config.xAxisMax ?? "") : (config.yAxisMax ?? "")}
+            onChange={(e) => handleChange(['h-box', 'range-dumbbell', 'ci-forest'].includes(chartType) ? "xAxisMax" : "yAxisMax", e.target.value === "" ? undefined : Number(e.target.value))}
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium">Y Step</label>
+          <label className="text-xs font-medium">{['h-box', 'range-dumbbell', 'ci-forest'].includes(chartType) ? 'X Step' : 'Y Step'}</label>
           <input 
             type="number" 
             className="p-2 border rounded-md text-base bg-background"
             placeholder="Auto"
-            value={config.yAxisStep ?? ""}
-            onChange={(e) => handleChange("yAxisStep", e.target.value === "" ? undefined : Number(e.target.value))}
+            value={['h-box', 'range-dumbbell', 'ci-forest'].includes(chartType) ? (config.xAxisStep ?? "") : (config.yAxisStep ?? "")}
+            onChange={(e) => handleChange(['h-box', 'range-dumbbell', 'ci-forest'].includes(chartType) ? "xAxisStep" : "yAxisStep", e.target.value === "" ? undefined : Number(e.target.value))}
           />
         </div>
       </div>
@@ -381,48 +385,159 @@ export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAn
               <option value="none">None</option>
               <option value="linear">Linear Regression</option>
               <option value="linear_forecast">Linear (Forecast)</option>
-              <option value="exponential">Exponential Growth</option>
+              <option value="exponential">Exponential Regression</option>
+              <option value="logarithmic">Logarithmic Regression</option>
             </select>
           </div>
+
+          {(config.trendlineType === "linear" || config.trendlineType === "linear_forecast" || config.trendlineType === "exponential") && (
+            <div className="flex flex-col gap-1.5 pl-2 border-l-2 border-border">
+              <div className="flex items-center gap-2">
+                <input 
+                  type="checkbox" 
+                  id="forceIntercept"
+                  checked={config.forceIntercept ?? false}
+                  onChange={(e) => handleChange("forceIntercept", e.target.checked)}
+                />
+                <label htmlFor="forceIntercept" className="text-base font-medium">Force Y-Intercept</label>
+              </div>
+              {config.forceIntercept && (
+                <input 
+                  type="number"
+                  className="p-2 border rounded-md text-base bg-background"
+                  value={config.forcedInterceptValue ?? 0}
+                  step="0.1"
+                  onChange={(e) => handleChange("forcedInterceptValue", parseFloat(e.target.value))}
+                />
+              )}
+            </div>
+          )}
         </>
+      )}
+
+      {chartType === "histogram" && (
+        <div className="flex flex-col gap-1.5">
+          <label className="text-base font-medium">Binning</label>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="w-full justify-start text-left font-normal bg-background text-base p-2 h-auto">
+                Change binning...
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Histogram Binning</DialogTitle>
+              </DialogHeader>
+              <div className="flex flex-col gap-4 py-4">
+                {(() => {
+                  let min = Infinity, max = -Infinity;
+                  if (sheet) {
+                    const isXY = graph.graphFamily === "XY";
+                    sheet.columnGroups.forEach((g: any) => {
+                      const columns: any[] | null = g.columns ? g.columns : (isXY ? [g] : null);
+                      if (columns) {
+                        columns.forEach((col: any) => {
+                          sheet.data.forEach((row: any) => {
+                            const v = row[col.id];
+                            if (v !== "" && v !== null && v !== undefined && !isNaN(Number(v))) {
+                              const num = Number(v);
+                              if (num < min) min = num;
+                              if (num > max) max = num;
+                            }
+                          });
+                        });
+                      } else {
+                        sheet.data.forEach((row: any) => {
+                          const v = row[g.id];
+                          if (v !== "" && v !== null && v !== undefined && !isNaN(Number(v))) {
+                            const num = Number(v);
+                            if (num < min) min = num;
+                            if (num > max) max = num;
+                          }
+                        });
+                      }
+                    });
+                  }
+                  
+                  const hasData = min !== Infinity && max !== -Infinity;
+                  
+                  const currentSettings = config.histogramBinSettings || { type: "continuous", stepSize: undefined };
+
+                  return (
+                    <>
+                      <div className="text-sm text-muted-foreground">
+                        {hasData ? `Data range: ${min.toPrecision(4)} to ${max.toPrecision(4)}` : "No numeric data found."}
+                      </div>
+                      
+                      <div className="flex flex-col gap-2 mt-2">
+                        <label className="font-medium text-sm">Data Type</label>
+                        <select 
+                          className="p-2 border rounded-md text-sm bg-background"
+                          value={currentSettings.type}
+                          onChange={(e) => {
+                            handleChange("histogramBinSettings", { ...currentSettings, type: e.target.value });
+                          }}
+                        >
+                          <option value="continuous">Continuous</option>
+                          <option value="prebinned">Prebinned (Exact Values)</option>
+                        </select>
+                        <p className="text-xs text-muted-foreground">
+                          {currentSettings.type === "continuous" 
+                            ? "Data is continuous. Specify a step size to group data into ranges (e.g. 10-19, 20-29)."
+                            : "Data is already discrete/binned. Values will be grouped exactly by their given number."}
+                        </p>
+                      </div>
+
+                      {currentSettings.type === "continuous" && (
+                        <div className="flex flex-col gap-2 mt-2">
+                          <label className="font-medium text-sm">Step Size (Optional)</label>
+                          <input 
+                            type="number"
+                            className="p-2 border rounded-md text-sm bg-background"
+                            placeholder="Auto"
+                            value={currentSettings.stepSize || ""}
+                            onChange={(e) => {
+                              const val = e.target.value === "" ? undefined : parseFloat(e.target.value);
+                              handleChange("histogramBinSettings", { ...currentSettings, stepSize: val });
+                            }}
+                          />
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       )}
 
       {/* Palette */}
       <div className="flex flex-col gap-1.5">
         <label className="text-base font-medium">Color Palette</label>
-        <select 
-          className="p-2 border rounded-md text-base bg-background"
+        <SearchableSelect
+          options={[
+            { label: "Okabe-Ito", value: "okabe-ito", group: "Colourblind-safe" },
+            { label: "Viridis", value: "viridis", group: "Colourblind-safe" },
+            { label: "Cividis", value: "cividis", group: "Colourblind-safe" },
+            { label: "Magma", value: "magma", group: "Colourblind-safe" },
+            { label: "Nature", value: "nature", group: "Journal" },
+            { label: "Lancet", value: "lancet", group: "Journal" },
+            { label: "JAMA", value: "jama", group: "Journal" },
+            { label: "Tableau Classic", value: "tableau", group: "Qualitative" },
+            { label: "Brewer Bold", value: "brewer-bold", group: "Qualitative" },
+            { label: "Forest Dusk", value: "forest-dusk", group: "Qualitative" },
+            { label: "Duo Tone", value: "duo-tone", group: "Qualitative" },
+            { label: "Ocean Breeze", value: "ocean", group: "Thematic" },
+            { label: "Soft Pastel", value: "pastel", group: "Thematic" },
+            { label: "Neon Glow", value: "neon", group: "Thematic" },
+            { label: "Earthy Tones", value: "earth", group: "Thematic" },
+            { label: "Retro Warm", value: "retro", group: "Thematic" },
+            { label: "Grayscale", value: "grayscale", group: "Print" },
+          ]}
           value={config.palette}
-          onChange={(e) => handleChange("palette", e.target.value)}
-        >
-          <optgroup label="Colourblind-safe">
-            <option value="okabe-ito">Okabe-Ito</option>
-            <option value="viridis">Viridis</option>
-            <option value="cividis">Cividis</option>
-            <option value="magma">Magma</option>
-          </optgroup>
-          <optgroup label="Journal">
-            <option value="nature">Nature</option>
-            <option value="lancet">Lancet</option>
-            <option value="jama">JAMA</option>
-          </optgroup>
-          <optgroup label="Qualitative">
-            <option value="tableau">Tableau Classic</option>
-            <option value="brewer-bold">Brewer Bold</option>
-            <option value="forest-dusk">Forest Dusk</option>
-            <option value="duo-tone">Duo Tone</option>
-          </optgroup>
-          <optgroup label="Thematic">
-            <option value="ocean">Ocean Breeze</option>
-            <option value="pastel">Soft Pastel</option>
-            <option value="neon">Neon Glow</option>
-            <option value="earth">Earthy Tones</option>
-            <option value="retro">Retro Warm</option>
-          </optgroup>
-          <optgroup label="Print">
-            <option value="grayscale">Grayscale</option>
-          </optgroup>
-        </select>
+          onChange={(val) => handleChange("palette", val)}
+        />
       </div>
 
       {/* Significance Scale */}
@@ -472,38 +587,30 @@ export function GraphSettingsPanel({ graph, analyses, onChangeConfig, onChangeAn
       {/* Styling */}
       <div className="flex flex-col gap-1.5">
         <label className="text-base font-medium">Font Family</label>
-        <select 
-          className="p-2 border rounded-md text-base bg-background"
+        <SearchableSelect
+          options={[
+            { label: "Arial", value: "Arial, sans-serif", group: "System Fonts", style: { fontFamily: "Arial, sans-serif" } },
+            { label: "Helvetica", value: "Helvetica, sans-serif", group: "System Fonts", style: { fontFamily: "Helvetica, sans-serif" } },
+            { label: "Times New Roman", value: "Times New Roman, serif", group: "System Fonts", style: { fontFamily: "Times New Roman, serif" } },
+            { label: "Inter", value: "Inter", group: "Bundled: Sans-Serif", style: { fontFamily: "Inter" } },
+            { label: "Roboto", value: "Roboto", group: "Bundled: Sans-Serif", style: { fontFamily: "Roboto" } },
+            { label: "Lato", value: "Lato", group: "Bundled: Sans-Serif", style: { fontFamily: "Lato" } },
+            { label: "Open Sans", value: "Open Sans", group: "Bundled: Sans-Serif", style: { fontFamily: "Open Sans" } },
+            { label: "Source Sans 3", value: "Source Sans 3", group: "Bundled: Sans-Serif", style: { fontFamily: "Source Sans 3" } },
+            { label: "Nunito Sans", value: "Nunito Sans", group: "Bundled: Sans-Serif", style: { fontFamily: "Nunito Sans" } },
+            { label: "Montserrat", value: "Montserrat", group: "Bundled: Sans-Serif", style: { fontFamily: "Montserrat" } },
+            { label: "Arial (Arimo)", value: "Arimo", group: "Bundled: Sans-Serif", style: { fontFamily: "Arimo" } },
+            { label: "IBM Plex Sans", value: "IBM Plex Sans", group: "Bundled: Sans-Serif", style: { fontFamily: "IBM Plex Sans" } },
+            { label: "Merriweather", value: "Merriweather", group: "Bundled: Serif", style: { fontFamily: "Merriweather" } },
+            { label: "Roboto Slab", value: "Roboto Slab", group: "Bundled: Serif", style: { fontFamily: "Roboto Slab" } },
+            { label: "IBM Plex Serif", value: "IBM Plex Serif", group: "Bundled: Serif", style: { fontFamily: "IBM Plex Serif" } },
+            { label: "Roboto Mono", value: "Roboto Mono", group: "Bundled: Monospace", style: { fontFamily: "Roboto Mono" } },
+            { label: "IBM Plex Mono", value: "IBM Plex Mono", group: "Bundled: Monospace", style: { fontFamily: "IBM Plex Mono" } },
+            { label: "JetBrains Mono", value: "JetBrains Mono", group: "Bundled: Monospace", style: { fontFamily: "JetBrains Mono" } },
+          ]}
           value={config.fontFamily}
-          onChange={(e) => handleChange("fontFamily", e.target.value)}
-        >
-          <optgroup label="System Fonts">
-            <option value="Arial, sans-serif">Arial</option>
-            <option value="Helvetica, sans-serif">Helvetica</option>
-            <option value="Times New Roman, serif">Times New Roman</option>
-          </optgroup>
-          <optgroup label="Bundled: Sans-Serif">
-            <option value="Inter">Inter</option>
-            <option value="Roboto">Roboto</option>
-            <option value="Lato">Lato</option>
-            <option value="Open Sans">Open Sans</option>
-            <option value="Source Sans 3">Source Sans 3</option>
-            <option value="Nunito Sans">Nunito Sans</option>
-            <option value="Montserrat">Montserrat</option>
-            <option value="Arimo">Arial (Arimo)</option>
-            <option value="IBM Plex Sans">IBM Plex Sans</option>
-          </optgroup>
-          <optgroup label="Bundled: Serif">
-            <option value="Merriweather">Merriweather</option>
-            <option value="Roboto Slab">Roboto Slab</option>
-            <option value="IBM Plex Serif">IBM Plex Serif</option>
-          </optgroup>
-          <optgroup label="Bundled: Monospace">
-            <option value="Roboto Mono">Roboto Mono</option>
-            <option value="IBM Plex Mono">IBM Plex Mono</option>
-            <option value="JetBrains Mono">JetBrains Mono</option>
-          </optgroup>
-        </select>
+          onChange={(val) => handleChange("fontFamily", val)}
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-2">

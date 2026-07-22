@@ -55,6 +55,7 @@ Statistics software tends to be expensive, desktop-bound, or both. StatLens does
 - **12 chart types** with significance brackets and asterisks
 - **Publication export** — 600-DPI PNG (correct DPI metadata, embedded fonts) and SVG
 - **Google Drive save/load**, light and dark themes
+- **Workspace organization** — label workbooks with custom tags, assign them distinct colors, and apply multiple tags per workbook.
 
 An in-app [About page](https://ronnyallen.github.io/StatLens/about) carries the same guide, kept verified against the engine.
 

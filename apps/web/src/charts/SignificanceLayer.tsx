@@ -28,7 +28,7 @@ export function SignificanceLayer({
   bracketHeight = 5,
   tierHeight = 25,
   showNs = true,
-  fontFamily = "Georgia, serif",
+  fontFamily = "Inter",
   fontSize = 12,
   pValueFontSize
 }: SignificanceLayerProps) {

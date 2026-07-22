@@ -6,6 +6,7 @@ import { BarErrorChart, BoxChart, ViolinChart, RaincloudChart, ScatterChart, Str
 import { HBoxChart, RangeDumbbellChart, CIForestChart } from "./HorizontalCategoryChart";
 import { XYScatterChart } from "./XYCharts";
 import { SurvivalChart } from "./SurvivalChart";
+import { HistogramChart } from "./HistogramChart";
 import { exportPNG, exportSVG } from "@/lib/exportGraph";
 import { Download } from "lucide-react";
 
@@ -95,6 +96,15 @@ export function GraphEngine({ graph, sheet, analysisResults }: GraphEngineProps)
                   height={height} 
                 />
               )}
+              {graph.chartType === "histogram" && (
+                <HistogramChart 
+                  sheet={sheet} 
+                  config={graph.config} 
+                  width={width} 
+                  height={height}
+                  graphFamily={graph.graphFamily}
+                />
+              )}
               {graph.chartType === "box" && (
                 <BoxChart 
                   sheet={sheet} 
@@ -166,7 +176,7 @@ export function GraphEngine({ graph, sheet, analysisResults }: GraphEngineProps)
                 <SurvivalChart sheet={sheet} config={graph.config} width={width} height={height} />
               )}
 
-              {graph.chartType !== "bar-error" && graph.chartType !== "box" && graph.chartType !== "violin" && graph.chartType !== "raincloud" && graph.chartType !== "scatter" && graph.chartType !== "strip" && graph.chartType !== "jitter" && graph.chartType !== "swarm" && graph.chartType !== "h-box" && graph.chartType !== "range-dumbbell" && graph.chartType !== "ci-forest" && graph.chartType !== "km-step" && (
+              {graph.chartType !== "bar-error" && graph.chartType !== "box" && graph.chartType !== "violin" && graph.chartType !== "raincloud" && graph.chartType !== "scatter" && graph.chartType !== "strip" && graph.chartType !== "jitter" && graph.chartType !== "swarm" && graph.chartType !== "h-box" && graph.chartType !== "range-dumbbell" && graph.chartType !== "ci-forest" && graph.chartType !== "km-step" && graph.chartType !== "histogram" && (
                 <text x={width/2} y={height/2} textAnchor="middle" fill="#666">
                   {graph.chartType} not implemented yet
                 </text>

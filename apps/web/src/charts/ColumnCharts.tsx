@@ -252,7 +252,7 @@ export function BarErrorChart({ sheet, analysisResults, config, width, height }:
               cy={yScale(val)}
               r={config.pointSize ?? 3}
                 fill={color}
-                fillOpacity={0.6}
+                fillOpacity={0.8}
                 stroke="black"
                 strokeWidth={1}
               />
@@ -662,7 +662,7 @@ export function ViolinChart({ sheet, analysisResults, config, width, height }: C
                         cy={yScale(val)}
                         r={config.pointSize ?? 3}
                         fill={color}
-                        fillOpacity={0.6}
+                        fillOpacity={0.8}
                         stroke="black"
                         strokeWidth={1}
                     />
@@ -824,7 +824,7 @@ export function RaincloudChart({ sheet, analysisResults, config, width, height }
               const jX = getJitterOffset(config.jitterSeed || 42, i * 1000 + j, jitterBand);
               const smallOffset = gap + (jX + jitterBand / 2);
               return <Circle key={`pt-${j}`} cx={cx + smallOffset} cy={yScale(v)} r={config.pointSize ?? 3}
-                        fill={color} fillOpacity={0.6} stroke="black" strokeWidth={1} />;
+                        fill={color} fillOpacity={0.8} stroke="black" strokeWidth={1} />;
             })}
           </g>
         );
@@ -901,7 +901,7 @@ export function ScatterChart({ sheet, analysisResults, config, width, height }: 
               </>
             )}
             {config.showPoints !== false && vals.map((v, j) => (
-              <Circle key={`pt-${j}`} cx={x + bw / 2 + getJitterOffset(config.jitterSeed || 42, i * 1000 + j, bw * 0.5)} cy={yScale(v)} r={config.pointSize ?? 3} fill={color} fillOpacity={0.6} stroke="black" strokeWidth={1} />
+              <Circle key={`pt-${j}`} cx={x + bw / 2 + getJitterOffset(config.jitterSeed || 42, i * 1000 + j, bw * 0.5)} cy={yScale(v)} r={config.pointSize ?? 3} fill={color} fillOpacity={0.8} stroke="black" strokeWidth={1} />
             ))}
           </g>
         );

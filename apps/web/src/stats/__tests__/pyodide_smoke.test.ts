@@ -7,7 +7,9 @@ import { loadPyodide } from "pyodide"
 // can't host) — that's the part of the acceptance criterion that can actually break silently.
 describe("Pyodide bootstrap smoke test", () => {
   it("loads numpy/scipy in Pyodide and matches a plain-SciPy reference exactly", async () => {
-    const pyodide = await loadPyodide()
+    const pyodide = await loadPyodide({
+      indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/",
+    })
     await pyodide.loadPackage(["numpy", "scipy"])
 
     const result = await pyodide.runPythonAsync(`

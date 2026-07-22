@@ -95,7 +95,7 @@ function parseGroupedData(sheet: DataSheet) {
 export function GroupedBarChart(props: GroupedChartsProps) {
   const { sheet, config, width, height } = props;
   const colors = PALETTES[config.palette || "okabe-ito"] || PALETTES["okabe-ito"];
-  const fontFamily = config.fontFamily || "system-ui";
+  const fontFamily = config.fontFamily || "Inter";
   const fontSize = config.fontSize || 12;
 
   const { rowTitles, colGroups, colGroupNames, parsedData, rawData } = useMemo(() => parseGroupedData(sheet), [sheet]);
@@ -228,7 +228,7 @@ export function GroupedBarChart(props: GroupedChartsProps) {
 export function GroupedBoxChart(props: GroupedChartsProps) {
   const { sheet, config, width, height } = props;
   const colors = PALETTES[config.palette || "okabe-ito"] || PALETTES["okabe-ito"];
-  const fontFamily = config.fontFamily || "system-ui";
+  const fontFamily = config.fontFamily || "Inter";
   const fontSize = config.fontSize || 12;
 
   const { rowTitles, colGroups, colGroupNames, rawData } = useMemo(() => parseGroupedData(sheet), [sheet]);
@@ -433,7 +433,7 @@ export function GroupedBoxChart(props: GroupedChartsProps) {
 // ----------------------------------------
 export function HeatmapChart({ sheet, config, width, height }: GroupedChartsProps) {
   const colors = PALETTES[config.palette || "okabe-ito"] || PALETTES["okabe-ito"];
-  const fontFamily = config.fontFamily || "system-ui";
+  const fontFamily = config.fontFamily || "Inter";
   const fontSize = config.fontSize || 12;
 
   const { rowTitles, colGroups, colGroupNames, parsedData } = useMemo(() => parseGroupedData(sheet), [sheet]);

@@ -23,9 +23,9 @@ beforeAll(async () => {
     await pyodide.loadPackage(["pandas", "scipy", "statsmodels", "scikit-learn"]);
     console.log("Installing pure python packages via micropip...");
     await micropip.install([
-        "pingouin==0.5.4",
-        "scikit-posthocs==0.9.0",
-        "lifelines==0.29.0"
+        "pingouin",
+        "scikit-posthocs",
+        "lifelines"
     ]);
     console.log("Packages installed.");
 }, 120000); // 2 minutes timeout for installation
@@ -46,7 +46,7 @@ async function runEngine(sheet: any, options: any) {
     pyGlobals.set("update_progress", pyodide.toPy((p: number, m: string) => {}));
     
     // Execute the main script
-    const pyResult = await pyodide.runPythonAsync(pythonCode, { globals: pyGlobals });
+    const pyResult = await pyodide.runPythonAsync(pythonCode + "\nrun()", { globals: pyGlobals });
     const result = pyResult.toJs({ dict_converter: Object.fromEntries });
     
     pyResult.destroy();

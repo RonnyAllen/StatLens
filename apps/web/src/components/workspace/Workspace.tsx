@@ -24,6 +24,8 @@ export function Workspace() {
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<"data" | "analyze" | "results" | "graph">("data")
   const [isGraphSettingsOpen, setIsGraphSettingsOpen] = useState(true)
+  const [dataZoom, setDataZoom] = useState(100)
+  const [chartZoom, setChartZoom] = useState(100)
   
   const [saveStatus, setSaveStatus] = useState<"idle" | "saved" | "saving" | "error">("idle")
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -84,6 +86,34 @@ export function Workspace() {
       }
     }, 2000)
   }, [accessToken, id])
+
+  const manualSave = useCallback(async () => {
+    if (!accessToken || !id || !workbook) return
+    setSaveStatus("saving")
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current)
+    }
+    try {
+      const drive = new DriveAPI(accessToken)
+      await drive.updateWorkbook(id, workbook)
+      setSaveStatus("saved")
+      setTimeout(() => setSaveStatus("idle"), 3000)
+    } catch (err) {
+      console.error("Failed to manual save", err)
+      setSaveStatus("error")
+    }
+  }, [accessToken, id, workbook])
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault()
+        manualSave()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [manualSave])
 
   // Call this whenever a sheet/analysis/graph changes
   const updateWorkbook = useCallback((updater: (prev: Workbook) => Workbook) => {
@@ -250,47 +280,86 @@ export function Workspace() {
       />
       
       <div className="flex-1 flex flex-col bg-muted/20 relative">
-        <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
-          {isRefreshingAnalyses && <span className="text-sm text-blue-600 dark:text-blue-400 animate-pulse mr-2">Refreshing results...</span>}
-          {saveStatus === "saving" && <span className="text-sm text-muted-foreground animate-pulse">Saving...</span>}
-          {saveStatus === "saved" && <span className="text-sm text-green-600 dark:text-green-400">Saved to Drive</span>}
-          {saveStatus === "error" && <span className="text-sm text-destructive">Error saving</span>}
-        </div>
-        
         {/* Workspace Main Area */}
         <div className="flex-1 flex flex-col p-4 min-h-0">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-xl font-bold truncate pr-4">{activeSheet ? activeSheet.name : workbook.name}</h2>
+            <div className="flex items-center gap-4 flex-1 min-w-0 pr-4">
+              <h2 className="text-xl font-bold truncate">{activeSheet ? activeSheet.name : workbook.name}</h2>
+              <div className="flex items-center gap-2 text-sm">
+                {isRefreshingAnalyses && <span className="text-blue-600 dark:text-blue-400 animate-pulse">Refreshing results...</span>}
+                {saveStatus === "saving" && <span className="text-muted-foreground animate-pulse">Saving...</span>}
+                {saveStatus === "saved" && <span className="text-green-600 dark:text-green-400">Saved to Drive</span>}
+                {saveStatus === "error" && <span className="text-destructive">Error saving</span>}
+              </div>
+            </div>
             {activeSheet && (
-              <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg">
-                <button
-                  className={`px-3 py-1.5 text-base font-medium rounded-md transition-colors ${viewMode === "data" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 shadow-sm" : "text-muted-foreground hover:bg-muted"}`}
-                  onClick={() => setViewMode("data")}
-                >
-                  Data
-                </button>
-                <button
-                  className={`px-3 py-1.5 text-base font-medium rounded-md transition-colors ${viewMode === "analyze" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300 shadow-sm" : "text-muted-foreground hover:bg-muted"}`}
-                  onClick={() => setViewMode("analyze")}
-                >
-                  Analyze
-                </button>
-                <button
-                  className={`px-3 py-1.5 text-base font-medium rounded-md transition-colors ${viewMode === "graph" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 shadow-sm" : "text-muted-foreground hover:bg-muted"}`}
-                  onClick={() => {
-                    setViewMode("graph")
-                    if (!activeGraphId || workbook.graphs.find(g => g.id === activeGraphId)?.sheetId !== activeSheet.id) {
-                      const firstGraph = workbook.graphs.find(g => g.sheetId === activeSheet.id)
-                      if (firstGraph) {
-                        setActiveGraphId(firstGraph.id)
-                      } else {
-                        setActiveGraphId(null)
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg">
+                  <button
+                    className={`px-3 py-1.5 text-base font-medium rounded-md transition-colors ${viewMode === "data" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 shadow-sm" : "text-muted-foreground hover:bg-muted"}`}
+                    onClick={() => setViewMode("data")}
+                  >
+                    Data
+                  </button>
+                  <button
+                    className={`px-3 py-1.5 text-base font-medium rounded-md transition-colors ${viewMode === "analyze" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300 shadow-sm" : "text-muted-foreground hover:bg-muted"}`}
+                    onClick={() => setViewMode("analyze")}
+                  >
+                    Analyze
+                  </button>
+                  <button
+                    className={`px-3 py-1.5 text-base font-medium rounded-md transition-colors ${viewMode === "graph" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 shadow-sm" : "text-muted-foreground hover:bg-muted"}`}
+                    onClick={() => {
+                      setViewMode("graph")
+                      if (!activeGraphId || workbook.graphs.find(g => g.id === activeGraphId)?.sheetId !== activeSheet.id) {
+                        const firstGraph = workbook.graphs.find(g => g.sheetId === activeSheet.id)
+                        if (firstGraph) {
+                          setActiveGraphId(firstGraph.id)
+                        } else {
+                          setActiveGraphId(null)
+                        }
                       }
-                    }
-                  }}
-                >
-                  Graph
-                </button>
+                    }}
+                  >
+                    Graph
+                  </button>
+                </div>
+
+                {(viewMode === "data" || viewMode === "graph") && (
+                  <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg text-sm">
+                    <button 
+                      className="px-2 py-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground"
+                      onClick={() => viewMode === "data" ? setDataZoom(z => Math.max(z - 10, 10)) : setChartZoom(z => Math.max(z - 10, 10))}
+                    >
+                      -
+                    </button>
+                    <input 
+                      type="text" 
+                      className="w-12 text-center bg-transparent border-none focus:ring-0 text-muted-foreground"
+                      value={viewMode === "data" ? `${dataZoom}%` : `${chartZoom}%`}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value.replace(/\D/g, ''));
+                        if (!isNaN(val)) {
+                          if (viewMode === "data") setDataZoom(val);
+                          else setChartZoom(val);
+                        }
+                      }}
+                      onBlur={(e) => {
+                         const val = parseInt(e.target.value.replace(/\D/g, ''));
+                         if (isNaN(val) || val < 10) {
+                           if (viewMode === "data") setDataZoom(100);
+                           else setChartZoom(100);
+                         }
+                      }}
+                    />
+                    <button 
+                      className="px-2 py-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground"
+                      onClick={() => viewMode === "data" ? setDataZoom(z => z + 10) : setChartZoom(z => z + 10)}
+                    >
+                      +
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -305,10 +374,12 @@ export function Workspace() {
               <div className="flex-1 flex flex-col relative h-full">
                 <div className={`flex-1 flex flex-col relative h-full ${viewMode === "data" ? "" : "hidden"}`}>
                   {activeSheet && (
-                    <AGGridWrapper 
-                      sheet={activeSheet} 
-                      onUpdate={handleUpdateSheet} 
-                    />
+                    <div style={{ zoom: `${dataZoom}%` }} className="h-full w-full">
+                      <AGGridWrapper 
+                        sheet={activeSheet} 
+                        onUpdate={handleUpdateSheet} 
+                      />
+                    </div>
                   )}
                 </div>
                 <div className={`flex-1 flex flex-col relative h-full ${viewMode === "analyze" ? "" : "hidden"}`}>
@@ -338,11 +409,13 @@ export function Workspace() {
                   {activeGraphId && workbook.graphs.find(g => g.id === activeGraphId) ? (
                     <div className="flex-1 flex overflow-hidden">
                       <div className="flex-1 p-4 overflow-auto min-w-0 dark:[&_svg]:invert-[0.85] dark:[&_svg]:hue-rotate-180 transition-all duration-300">
-                        <GraphEngine 
-                          graph={workbook.graphs.find(g => g.id === activeGraphId)!}
-                          sheet={workbook.sheets.find(s => s.id === workbook.graphs.find(g => g.id === activeGraphId)?.sheetId)!}
-                          analysisResults={workbook.analyses.find(a => a.id === workbook.graphs.find(g => g.id === activeGraphId)?.analysisId)?.results}
-                        />
+                        <div style={{ zoom: `${chartZoom}%` }} className="h-full w-full">
+                          <GraphEngine 
+                            graph={workbook.graphs.find(g => g.id === activeGraphId)!}
+                            sheet={workbook.sheets.find(s => s.id === workbook.graphs.find(g => g.id === activeGraphId)?.sheetId)!}
+                            analysisResults={workbook.analyses.find(a => a.id === workbook.graphs.find(g => g.id === activeGraphId)?.analysisId)?.results}
+                          />
+                        </div>
                       </div>
                       
                       <div 
@@ -358,6 +431,7 @@ export function Workspace() {
                         <div className={`h-full w-full overflow-y-auto p-4 transition-opacity duration-300 ${isGraphSettingsOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                           <GraphSettingsPanel 
                             graph={workbook.graphs.find(g => g.id === activeGraphId)!}
+                            sheet={workbook.sheets.find(s => s.id === workbook.graphs.find(g => g.id === activeGraphId)?.sheetId)!}
                             analyses={workbook.analyses.filter(a => a.sheetId === activeSheet.id)}
                             onChangeConfig={(config) => {
                               updateWorkbook(prev => {

@@ -54,3 +54,5 @@ When in doubt, prefer correctness and clarity over cleverness, and prefer fewer 
 - The oracle path and the production path must be independent (don't validate a function against
   itself). Prefer a second library, a textbook dataset with a published answer, or a hardcoded
   R/Prism-validated value.
+## Git Commits
+All changes must be made to local files. DO NOT commit or push anything to the git repo until explicitly instructed by the user.

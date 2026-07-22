@@ -33,6 +33,7 @@ const IMPLEMENTED: string[] = [
   "12 chart types with significance brackets and asterisks",
   "Publication export: 600-DPI PNG (correct DPI metadata, embedded fonts) and SVG",
   "Google Drive save/load, light and dark themes",
+  "Workspace organization: label workbooks with multiple custom color-coded tags",
 ]
 
 const COMING_SOON: string[] = [

@@ -4,7 +4,7 @@ import { LinePath, Line, Circle } from "@visx/shape";
 import { curveMonotoneX } from "@visx/curve";
 import { getAutoAxisRange } from "./geometry/axis";
 import { BaseChartLayout } from "./BaseChartLayout";
-import { linearRegression, exponentialRegression } from "./geometry/regression";
+import { linearRegression, exponentialRegression, logarithmicRegression } from "./geometry/regression";
 import { PALETTES } from "./ColumnCharts";
 import type { DataSheet, GraphConfig } from "@/types/workbook";
 import { computeChartLayout } from "./geometry/layout";
@@ -61,6 +61,8 @@ export function XYScatterChart({ sheet, config, width, height }: XYChartsProps) 
   const seriesEquations = new Map<string, string>();
   
     if (trendlineType !== "none") {
+      const forceInt = config.forceIntercept;
+      const intVal = config.forcedInterceptValue ?? 0;
       seriesNames.forEach((series) => {
         const pts = dataMap.get(series) || [];
         if (pts.length <= 1) return;
@@ -68,15 +70,22 @@ export function XYScatterChart({ sheet, config, width, height }: XYChartsProps) 
         const yArr = pts.map(p => p.y);
         let trendlineStr = "";
         if (trendlineType === "linear" || trendlineType === "linear_forecast") {
-          const reg = linearRegression(xArr, yArr);
+          const reg = linearRegression(xArr, yArr, forceInt, intVal);
           const sign = reg.intercept < 0 ? "-" : "+";
           const prefix = seriesNames.length > 1 ? series + ": " : "";
           trendlineStr = `${prefix}y = ${reg.slope.toPrecision(3)}x ${sign} ${Math.abs(reg.intercept).toPrecision(3)} (R² = ${reg.rSquared.toFixed(3)})`;
         } else if (trendlineType === "exponential") {
-          const reg = exponentialRegression(xArr, yArr);
+          const reg = exponentialRegression(xArr, yArr, forceInt, intVal);
           if (reg.A !== 0) {
             const prefix = seriesNames.length > 1 ? series + ": " : "";
             trendlineStr = `${prefix}y = ${reg.A.toPrecision(3)}e^(${reg.B.toPrecision(3)}x) (R² = ${reg.rSquared.toFixed(3)})`;
+          }
+        } else if (trendlineType === "logarithmic") {
+          const reg = logarithmicRegression(xArr, yArr);
+          if (reg.a !== 0) {
+            const sign = reg.b < 0 ? "-" : "+";
+            const prefix = seriesNames.length > 1 ? series + ": " : "";
+            trendlineStr = `${prefix}y = ${reg.a.toPrecision(3)}ln(x) ${sign} ${Math.abs(reg.b).toPrecision(3)} (R² = ${reg.rSquared.toFixed(3)})`;
           }
         }
         if (trendlineStr) { seriesEquations.set(series, trendlineStr); equationLines.push(trendlineStr); }
@@ -170,11 +179,13 @@ const xScale = scaleLinear<number>({
         let pathLine = null;
 
         if (trendlineType !== "none" && pts.length > 1) {
+          const forceInt = config.forceIntercept;
+          const intVal = config.forcedInterceptValue ?? 0;
           const xArr = pts.map(p => p.x);
           const yArr = pts.map(p => p.y);
           
           if (trendlineType === "linear" || trendlineType === "linear_forecast") {
-            const reg = linearRegression(xArr, yArr);
+            const reg = linearRegression(xArr, yArr, forceInt, intVal);
             const x1 = Math.min(...xArr);
             const x2 = trendlineType === "linear_forecast" ? xForecastMax : Math.max(...xArr);
             const y1 = reg.slope * x1 + reg.intercept;
@@ -187,10 +198,8 @@ const xScale = scaleLinear<number>({
                 stroke={color} strokeWidth={2} strokeDasharray="4,4" 
               />
             );
-            const sign = reg.intercept < 0 ? "-" : "+";
-            // trendlineStr = `y = ${reg.slope.toPrecision(3)}x ${sign} ${Math.abs(reg.intercept).toPrecision(3)} (R²=${reg.rSquared.toFixed(3)})`;
           } else if (trendlineType === "exponential") {
-            const reg = exponentialRegression(xArr, yArr);
+            const reg = exponentialRegression(xArr, yArr, forceInt, intVal);
             if (reg.A !== 0) {
               const x1 = Math.min(...xArr);
               const x2 = Math.max(...xArr);
@@ -209,7 +218,29 @@ const xScale = scaleLinear<number>({
                   strokeDasharray="4,4"
                 />
               );
-              // trendlineStr = `y = ${reg.A.toPrecision(3)}e^(${reg.B.toPrecision(3)}x) (R²=${reg.rSquared.toFixed(3)})`;
+            }
+          } else if (trendlineType === "logarithmic") {
+            const reg = logarithmicRegression(xArr, yArr);
+            if (reg.a !== 0) {
+              const x1 = Math.max(0.0001, Math.min(...xArr));
+              const x2 = Math.max(...xArr);
+              if (x1 < x2) {
+                const step = (x2 - x1) / 50;
+                const curvePts = [];
+                for(let v = x1; v <= x2; v += step) {
+                  curvePts.push({ x: v, y: reg.a * Math.log(v) + reg.b });
+                }
+                pathLine = (
+                  <LinePath
+                    data={curvePts}
+                    x={d => xScale(d.x)}
+                    y={d => yScale(d.y)}
+                    stroke={color}
+                    strokeWidth={2}
+                    strokeDasharray="4,4"
+                  />
+                );
+              }
             }
           }
         }

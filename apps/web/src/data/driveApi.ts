@@ -43,9 +43,12 @@ export class DriveAPI {
     return createData.id
   }
 
-  async listWorkbooks(folderId: string): Promise<any[]> {
-    const q = `'${folderId}' in parents and mimeType = 'application/json' and name contains '.statlens' and trashed = false`
-    const res = await this.fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&spaces=drive&fields=files(id,name,modifiedTime)`)
+  async listWorkbooks(folderId: string, searchQuery?: string): Promise<any[]> {
+    let q = `'${folderId}' in parents and mimeType = 'application/json' and name contains '.statlens' and trashed = false`
+    if (searchQuery) {
+      q += ` and fullText contains '${searchQuery.replace(/'/g, "\\'")}'`
+    }
+    const res = await this.fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&spaces=drive&fields=files(id,name,modifiedTime,createdTime,appProperties)`)
     const data = await res.json()
     return data.files || []
   }
@@ -141,5 +144,92 @@ export class DriveAPI {
     if (!response.ok) {
       throw new Error("Failed to update workbook")
     }
+  }
+
+  async updateWorkbookMetadata(fileId: string, properties: Record<string, string | null>): Promise<void> {
+    const url = `https://www.googleapis.com/drive/v3/files/${fileId}`
+    const response = await this.fetch(url, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ appProperties: properties })
+    })
+    if (!response.ok) {
+      throw new Error("Failed to update workbook metadata")
+    }
+  }
+
+  async getProfile(folderId: string): Promise<any> {
+    const q = `'${folderId}' in parents and name = 'profile.json' and trashed = false`
+    const res = await this.fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&spaces=drive&fields=files(id,name)`)
+    const data = await res.json()
+    
+    if (data.files && data.files.length > 0) {
+      const fileId = data.files[0].id
+      const contentRes = await this.fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`)
+      return contentRes.json()
+    }
+    return null
+  }
+
+  async updateProfile(folderId: string, profileData: any): Promise<void> {
+    const q = `'${folderId}' in parents and name = 'profile.json' and trashed = false`
+    const res = await this.fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&spaces=drive&fields=files(id)`)
+    const data = await res.json()
+
+    if (data.files && data.files.length > 0) {
+      const fileId = data.files[0].id
+      await this.fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(profileData)
+      })
+    } else {
+      const metadata = { name: "profile.json", parents: [folderId], mimeType: "application/json" }
+      const form = new FormData()
+      form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }))
+      form.append("file", new Blob([JSON.stringify(profileData)], { type: "application/json" }))
+
+      await this.fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+        method: "POST",
+        body: form
+      })
+    }
+  }
+
+  async uploadProfileImage(folderId: string, imageBlob: Blob): Promise<string> {
+    const q = `'${folderId}' in parents and name = 'profile_image.png' and trashed = false`
+    const res = await this.fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&spaces=drive&fields=files(id)`)
+    const data = await res.json()
+
+    if (data.files && data.files.length > 0) {
+      const fileId = data.files[0].id
+      const updateRes = await this.fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+        method: "PATCH",
+        headers: { "Content-Type": "image/png" },
+        body: imageBlob
+      })
+      const updateData = await updateRes.json()
+      return updateData.id
+    } else {
+      const metadata = { name: "profile_image.png", parents: [folderId], mimeType: "image/png" }
+      const form = new FormData()
+      form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }))
+      form.append("file", imageBlob)
+
+      const createRes = await this.fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+        method: "POST",
+        body: form
+      })
+      const createData = await createRes.json()
+      return createData.id
+    }
+  }
+  
+  async getProfileImage(fileId: string): Promise<string> {
+    const res = await this.fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&_cb=${Date.now()}`, {
+      cache: "no-store"
+    })
+    const blob = await res.blob()
+    return URL.createObjectURL(blob)
   }
 }

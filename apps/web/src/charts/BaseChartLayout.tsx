@@ -52,7 +52,7 @@ export function BaseChartLayout({
   yLabel,
   xLabel,
   yTickValues,
-  fontFamily = "Georgia, serif",
+  fontFamily = "Inter",
   fontSize = 12,
   axisTitleFontSize,
   axisLabelFontSize,

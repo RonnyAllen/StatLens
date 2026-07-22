@@ -37,6 +37,7 @@
 | Mixed-effects ANOVA | ✅ Runs | Grouped (golden) | ✅ | ✅ | ✅ |
 | Multiple Linear Regression | ✅ Runs | MultipleVariables (golden) | ✅ | ✅ | ✅ |
 | Multiple Logistic Regression | ✅ Runs | MultipleVariables (golden) | ✅ | ✅ | ✅ |
+| Firth's Penalized Logistic Regression | ❌ Pending | MultipleVariables | ❌ | ❌ | ❌ |
 | Nested ANOVA | ✅ Runs | Grouped (golden) | ❌ | ✅ | ❌ |
 | Nested t-test / ANOVA | ✅ Runs | Grouped | ✅ | ❌ | ✅ |
 | Nonlinear Curve Fitting | ✅ Runs | XY (golden) | ✅ | ✅ | ✅ |

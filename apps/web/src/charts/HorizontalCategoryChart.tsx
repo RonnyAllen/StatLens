@@ -59,14 +59,15 @@ export function HBoxChart({ sheet, analysisResults, config, width, height }: Hor
   }
 
   const _range = getAutoAxisRange((isFinite(minV) && isFinite(maxV)) ? [minV, maxV] : [], 0.05);
-  const xMin = (config.axisMode === "manual" && config.xAxisMin != null) ? config.xAxisMin : _range.min;
-  const xMax = (config.axisMode === "manual" && config.xAxisMax != null) ? config.xAxisMax : _range.max;
+  const xMin = (config.xAxisMin != null) ? config.xAxisMin : _range.min;
+  const xMax = (config.xAxisMax != null) ? config.xAxisMax : _range.max;
 
   const layout = computeChartLayout({
     width, height, config,
     xTickLabels: [xMin.toPrecision(3), xMax.toPrecision(3)], // For bottom margin estimation
     yTickLabels: groups, // For left margin measurement
-    orientation: "horizontal"
+    orientation: "horizontal",
+    legendItems: groups.map((g, i) => ({ label: g, color: PALETTES[config.palette || "okabe-ito"][i % PALETTES[config.palette || "okabe-ito"].length] }))
   });
 
   const yScale = scaleBand({ range: [0, layout.innerHeight], domain: groups, padding: 0.2 });
@@ -84,6 +85,7 @@ export function HBoxChart({ sheet, analysisResults, config, width, height }: Hor
           fontFamily={config.fontFamily} fontSize={config.fontSize}
           axisTitleFontSize={config.axisTitleFontSize} axisLabelFontSize={config.axisLabelFontSize}
           xAxisTitleY={layout.xAxisTitleY} yAxisTitleX={layout.yAxisTitleX}
+          legend={layout.legend}
         >
           {groups.map((g, i) => {
             const vals = dataMap.get(g) || [];
@@ -155,8 +157,10 @@ export function HBoxChart({ sheet, analysisResults, config, width, height }: Hor
                      cx={xScale(v)}
                      cy={cy + getJitterOffset(config.jitterSeed, idx, boxH)}
                      r={config.pointSize ?? 3}
-                     fill="currentColor"
-                     opacity={0.6}
+                     fill={color}
+                     fillOpacity={0.8}
+                     stroke="#000000"
+                     strokeWidth={1}
                    />
                 ))}
               </g>
@@ -210,14 +214,15 @@ export function RangeDumbbellChart({ sheet, analysisResults, config, width, heig
   }
 
   const _range = getAutoAxisRange((isFinite(minV) && isFinite(maxV)) ? [minV, maxV] : [], 0.05);
-  const xMin = (config.axisMode === "manual" && config.xAxisMin != null) ? config.xAxisMin : _range.min;
-  const xMax = (config.axisMode === "manual" && config.xAxisMax != null) ? config.xAxisMax : _range.max;
+  const xMin = (config.xAxisMin != null) ? config.xAxisMin : _range.min;
+  const xMax = (config.xAxisMax != null) ? config.xAxisMax : _range.max;
 
   const layout = computeChartLayout({
     width, height, config,
     xTickLabels: [xMin.toPrecision(3), xMax.toPrecision(3)],
     yTickLabels: groups,
-    orientation: "horizontal"
+    orientation: "horizontal",
+    legendItems: groups.map((g, i) => ({ label: g, color: PALETTES[config.palette || "okabe-ito"][i % PALETTES[config.palette || "okabe-ito"].length] }))
   });
 
   const yScale = scaleBand({ range: [0, layout.innerHeight], domain: groups, padding: 0.2 });
@@ -234,6 +239,7 @@ export function RangeDumbbellChart({ sheet, analysisResults, config, width, heig
           fontFamily={config.fontFamily} fontSize={config.fontSize}
           axisTitleFontSize={config.axisTitleFontSize} axisLabelFontSize={config.axisLabelFontSize}
           xAxisTitleY={layout.xAxisTitleY} yAxisTitleX={layout.yAxisTitleX}
+          legend={layout.legend}
         >
           {groups.map((g, i) => {
             const rng = ranges.get(g);
@@ -252,8 +258,10 @@ export function RangeDumbbellChart({ sheet, analysisResults, config, width, heig
                      cx={xScale(v)}
                      cy={cy + getJitterOffset(config.jitterSeed, idx, 20)}
                      r={2}
-                     fill="currentColor"
-                     opacity={0.3}
+                     fill={color}
+                     fillOpacity={0.8}
+                     stroke="#000000"
+                     strokeWidth={1}
                    />
                 ))}
               </g>
@@ -340,15 +348,16 @@ export function CIForestChart({ sheet, analysisResults, config, width, height }:
   }
 
   const _range = getAutoAxisRange((isFinite(minV) && isFinite(maxV)) ? [minV, maxV] : [], 0.05);
-  const xMin = (config.axisMode === "manual" && config.xAxisMin != null) ? config.xAxisMin : _range.min;
-  const xMax = (config.axisMode === "manual" && config.xAxisMax != null) ? config.xAxisMax : _range.max;
+  const xMin = (config.xAxisMin != null) ? config.xAxisMin : _range.min;
+  const xMax = (config.xAxisMax != null) ? config.xAxisMax : _range.max;
 
   const yDomain = items.map(d => d.id);
   const layout = computeChartLayout({
     width, height, config,
     xTickLabels: [xMin.toPrecision(3), xMax.toPrecision(3)],
     yTickLabels: items.map(d => d.label),
-    orientation: "horizontal"
+    orientation: "horizontal",
+    legendItems: items.map((item, i) => ({ label: item.label, color: PALETTES[config.palette || "okabe-ito"][i % PALETTES[config.palette || "okabe-ito"].length] }))
   });
 
   const yScale = scaleBand({ range: [0, layout.innerHeight], domain: yDomain, padding: 0.3 });
@@ -366,6 +375,7 @@ export function CIForestChart({ sheet, analysisResults, config, width, height }:
           fontFamily={config.fontFamily} fontSize={config.fontSize}
           axisTitleFontSize={config.axisTitleFontSize} axisLabelFontSize={config.axisLabelFontSize}
           xAxisTitleY={layout.xAxisTitleY} yAxisTitleX={layout.yAxisTitleX}
+          legend={layout.legend}
         >
           {items.map((item, i) => {
             const cy = (yScale(item.id) ?? 0) + yScale.bandwidth() / 2;

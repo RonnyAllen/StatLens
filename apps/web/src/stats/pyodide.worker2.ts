@@ -10,7 +10,7 @@ self.onmessage = async (event) => {
     try {
       self.postMessage({ id, type: "progress", progress: 10, message: "Loading Pyodide runtime..." })
       pyodide = await loadPyodide({
-        indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.1/full/",
+        indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/",
       })
       
       self.postMessage({ id, type: "progress", progress: 40, message: "Loading core mathematics (NumPy, SciPy)..." })
@@ -23,7 +23,7 @@ self.onmessage = async (event) => {
         self.postMessage({ id, type: "progress", progress: 70, message: "Loading advanced statistics (Pingouin, Lifelines)..." })
         await pyodide.runPythonAsync(`
           import micropip
-          await micropip.install(["pingouin==0.5.4", "scikit-posthocs==0.9.0", "lifelines==0.29.0"])
+          await micropip.install(["pingouin", "scikit-posthocs", "lifelines"])
         `)
       } catch (e: any) {
         console.warn("[StatLens] optional package install failed (continuing):", e?.message || e)
