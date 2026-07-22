@@ -3302,7 +3302,6 @@ def run():
                         y_col = columns[1]
                         covars = columns[2:]
                         
-                        import pingouin as pg
                         pcor = pg.partial_corr(data=df_pc, x=x_col, y=y_col, covar=covars)
                         r_val = pcor['r'].iloc[0]
                         pval_col = 'p_val' if 'p_val' in pcor.columns else 'p-value'
